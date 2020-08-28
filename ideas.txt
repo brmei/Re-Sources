@@ -1,0 +1,11 @@
+Player is a lonely characetr trying to escape blackhole
+
+square planets
+hopping between planets
+
+Resources-
+Food
+Water
+Fuels-
+
+Upgrades-
