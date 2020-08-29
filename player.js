@@ -2,171 +2,213 @@ class Player {
   
   constructor(spawn) {
     this.pos = spawn;
+    this.width = 0.8;
+    this.height = 1.6;
+
+    this.maxGrav = 10;
+    
     this.speed = 5;
     this.vector = new p5.Vector(0,0,0);
-    //this.inventory = new Inventory();
+    
+    this.onFloor = false;
+    
+    this.inventory = new Backpack();
+    this.saturationCon = 50;
+    this.health = 100;
+    this.oxygen = 100;
+    this.food = 100;
+    this.water = 100;
+    this.dieingRate = 0;
+    
+    
   }
     
+  getStats(){
+    return [this.health,this.oxygen,this.food,this.water];
+  }
+  
   show(){
+    cam1.snap(-this.pos.x,-this.pos.y)
     fill(255,255,255);
-    rect(this.pos.x,this.pos.y,gridSpace,gridSpace);
+    rect(this.pos.x,this.pos.y,gridSpace*this.width,-gridSpace*this.height);
+  }
+  
+  
+
+  
+  addForce(vel){
+    this.vector.add(vel);
   }
   
   move(tilemap) {
     this.vector.x /= friction;
-  
+    
     if(this.isGravity(tilemap)){
-      this.vector.add(0,gravity);//Apply gravity
+      if(this.inWater(tilemap)){
+            this.vector.add(0,0.2*gravity);//Apply gravity
+      }else{
+        this.vector.add(0,gravity);//Apply gravity
+      }
     }else{
       if(this.vector.y>0){
         this.vector.y = 0;//Stop when ground hit
       }
     }
-    let newPos = p5.Vector.add(this.pos,this.vector);
+    
+    let newPos = p5.Vector.add(this.pos,this.vector);//New position if moved
     if(this.vector.x>0){//If moving right 
-      if(this.collide(tilemap,createVector(ceil((newPos.x)/gridSpace),ceil((newPos.y/gridSpace))))||this.collide(tilemap,createVector(ceil((newPos.x+1)/gridSpace),-1+ceil(((newPos.y)/gridSpace))))){
+      if(this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil(-1+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil((-1+(newPos.y)/gridSpace))))){
         this.vector.x=0;
       }
     }else if(this.vector.x<0){//If moving left
-      if(this.collide(tilemap,createVector(floor((newPos.x)/gridSpace),floor(newPos.y/gridSpace)))||this.collide(tilemap,createVector(floor((newPos.x)/gridSpace),-1+floor((newPos.y)/gridSpace)))){
-        this.vector.x=0;
+      if(tilemap[floor((newPos.y-1)/gridSpace)][floor(newPos.x/gridSpace)]==","){
+         this.vector.x=0;
       }
     }
-    newPos = this.pos.copy();
-    newPos.y += this.vector.y;
+    newPos = createVector(this.pos.x,this.pos.y+this.vector.y);
     if(this.vector.y<0){//If moving up
-      if(this.collide(tilemap,createVector(floor((newPos.x)/gridSpace),floor((newPos.y/gridSpace))))||this.collide(tilemap,createVector(1+floor((newPos.x)/gridSpace),floor((newPos.y/gridSpace))))){
-        console.log("test")
+      if(this.collide(tilemap,createVector(floor((newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))){
         this.vector.y=0;
       }
     }
 
-    //this.touchingWall(planet);
+  
     this.rotatePlanet(planet);
-    
+    if(this.vector.x>this.speed){
+      this.vector.x = this.speed;
+    }
+    if(this.vector.y>this.maxGrav){
+      this.vector.y = this.maxGrav;
+    }
     this.pos.add(this.vector);
-    if(!this.isGravity(tilemap)){
+    if(!this.isGravity(tilemap)&&this.vector.y>=0){//If no gravity
       this.pos.y = gridSpace*floor(this.pos.y/gridSpace);  
     }
-    cam1.snap(-this.pos.x,-this.pos.y)
-    //cam1.shift(-this.vector.x,-this.vector.y);
   }
   
   isGravity(tilemap){
-    //console.log(this.pos.y);
-    let newPos = createVector(floor(this.pos.x/gridSpace),floor((this.pos.y+gravity)/gridSpace));//Next position
-    //console.log(tilemap)
+    let flooredPos = createVector(floor(this.pos.x/gridSpace),floor((this.pos.y+gravity)/gridSpace));//Next position
+    let normalPos = createVector((this.pos.x/gridSpace),((this.pos.y+gravity)/gridSpace));//Next position
     //If both corners are above nothing
-    if(!this.inTilemap(newPos.x,newPos.y)){//Outside of tilemap
+    if(!this.inTilemap(normalPos.x,normalPos.y)){//Outside of tilemap
       return true;
-    }
-    return !(this.collide(tilemap,createVector(newPos.x,newPos.y+1))||this.collide(tilemap,createVector(newPos.x+1,newPos.y+1)))
+    }//If no floor
+    return !(this.collide(tilemap,createVector(flooredPos.x,floor(flooredPos.y)))||this.collide(tilemap,createVector(floor(normalPos.x+this.width),floor(normalPos.y))))
   }
   collide(tilemap,pos){
-    return(tilemap[(pos.y)][(pos.x)]==",");
+    if (!this.inTilemap(pos.x,pos.y)) return false;
+    return (tilemap[pos.y][pos.x]==",");
   }
   
   jump(inputMag,tilemap){
-    if(!this.isGravity(tilemap)){
+    if(this.inWater(tilemap)){
+      this.vector.sub(0,inputMag*0.05);
+    }else if(!this.isGravity(tilemap)){
       this.vector.sub(0,inputMag);
     }
   }
   
   inTilemap(x,y){
-    return!(y<0||x<0||y>planet.size*gridSpace/2||x>planet.size*gridSpace)
+    return!(y<=0||x<=0||y>planet.size*gridSpace/2||x>planet.size*gridSpace)
   }
   
-  // relativePosition (i,j) {
-  //   let relativeX = j*gridSpace - this.x;
-  //   let relativeY = i*gridSpace - this.y;
-  //   //console.log("relative x: " + relativeX);
-  //   if (relativeX > relativeY) {
-  //     if (relativeX > 0) return "down"
-  //     else return "up"
-  //   } else {
-  //     if (relativeY > 0) return "left"
-  //     else return "right"
-  //   }
-  // }
-  isGrounded(p) {
-    let tilemap = p.getRelativeTilemap(0).getArray()
-    for (var i=0;i<tilemap.length;i++){
-      for (var j=0;j<tilemap[i].length;j++) {
-        switch (tilemap[i][j]) {
-          case ".":
-            //air does nothing
-            break;
-          default:
-            //If not air
-            if(collideRectRect(this.x, this.y + this.vector.y, playerWidth, playerHeight, j*gridSpace, i*gridSpace, gridSpace, gridSpace)){
-              //console.log("true");
-              cam1.snap(cam1.x,-(i-1)*gridSpace);
-              this.y = (i-1)*gridSpace;
-              return true; 
-            }
-        }
-      }
-    }
-    //console.log("false");
-    return false;
+  inWater(tilemap){
+    if(!this.inTilemap(this.pos.x,this.pos.y)) return false;
+    return tilemap[floor((this.pos.y)/gridSpace)][floor(this.pos.x/gridSpace)]=="w";
   }
-  touchingWall(p) {
-     for (var i=0;i<p.getRelativeTilemap(0).array.length;i++){
-      for (var j=0;j<p.getRelativeTilemap(0).array[i].length;j++) {
-        switch (p.getRelativeTilemap(0).array[i][j]) {
-          case ".":
-            //air does nothing
-            break;
-          default:
-            
-            if(collideRectRect(this.x, this.y + gridSpace/10, playerWidth, playerHeight*4/5, j*gridSpace, i*gridSpace, gridSpace, gridSpace)){
-              //console.log("true");
-              if (this.vector.x < 0) {
-                cam1.snap(-(j-1)*gridSpace,cam1.y);
-                this.x = (j-1)*gridSpace;
-              } else if (this.vector.x > 0) {
-                cam1.snap(-(j+1)*gridSpace,cam1.y);
-                this.x = (j+1)*gridSpace;
-              }
-              return true; 
-            }
-            // if(collideRectRect(this.x+this.vector.x, this.y, gridSpace, gridSpace, j*gridSpace, i*gridSpace, gridSpace, gridSpace)){
-            //   console.log("true");
-            //   cam1.snap(-(j-1)*gridSpace,cam1.y);
-            //   this.x = (j-1)*gridSpace;
-            //   return true; 
-            // }
-        }
-      }
-    } 
-    return false;
+  
+  update(planet){
+    this.dieingRate = 0;
+    if(this.oxygen==0){
+      this.dieingRate+=1;
+    }
+    if(this.water==0){
+      this.dieingRate+=1;
+    }
+    if(this.food==0){
+      this.dieingRate+=1;
+    }
+    //Regeneration
+    if(this.oxygen>this.saturationCon&&this.water>this.saturationCon&&this.food>this.saturationCon){
+      this.dieingRate = -0.1;
+    }
+    
+    this.health+=this.dieingRate;
+    
+  
+
   }
   
   rotatePlanet(p) {
     /*in region y/x>1 rotate planet clockwise; in region -y/(x-p)>1 rotate planet counterclockwise*/
     if (this.pos.y/this.pos.x>1) {
       //rotate clockwise
-      p.rotate(1);
-      this.vector.add(-20,10);
+      p.rotate(-1);
+      this.vector.add(-20,-5);
       this.pos = createVector(-this.pos.y+p.size*gridSpace,this.pos.x);
     } else if (-this.pos.y/(this.pos.x-p.size*gridSpace)>1) {
       //rotate counterclockwise
-      p.rotate(-1);
-      this.vector.add(20,10);
+      p.rotate(1);
+      this.vector.add(20,-5);
       this.pos = createVector(this.pos.y,-this.pos.x+p.size*gridSpace);
     }
   }
   
-  checkShip(p) {
-    let playerTile = createVector(floor(this.pos.x/gridSpace),floor(this.pos.y/gridSpace));
-    for (var i=-2;i<3;i++) {
-      for (var j=-2;j<3;j++) {
-        if(tilemap[(playerTile.x+j)][(playerTile.y+i)]=="s") {
-          return "true";
-        }
+  
+}
+
+class Backpack {
+  constructor() {
+    this.items = [];
+    this.select = 0; //The position of the current item the player has selected
+  }
+  
+  addItem(i) {
+    append(this.items, i);
+  }
+  
+  switchItem(){
+    this.select++;
+    if(this.select == this.items.length){
+      this.select = 0;
+    }
+  }
+  
+  useItem(){
+    
+  }
+  
+  show(){
+    fill(0);
+    let sidebarWidth = gameWidth/2-gameHeight/2;
+    let sidebarRow = gameHeight/10;
+    rect(0,0,sidebarWidth,gameHeight);
+    fill(50,200,50);
+    textSize(sidebarRow/2);
+    for(let i = 0; i < this.items.length; i++){
+      if(this.select == i){
+        rect(0, 0 + i*sidebarRow,sidebarWidth,sidebarRow);
+        fill(0);
+        text(this.items[i].name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
+        fill(50,200,50);
+      }
+      else{
+       text(this.items[i].name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
       }
     }
-    return "false";
+    //console.log(this.items);
+  }
+  selected() {
+    
+  }
+}
+
+class Item {
+  constructor(name){
+    this.name = name;
+  }
+  name(){
+    return this.name;
   }
 }
 
