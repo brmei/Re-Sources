@@ -1,11 +1,47 @@
-Player is a lonely characetr trying to escape blackhole
+You are a lonely astronaut trying to escape a blackhole.
+The gameplay involves landing on tiny planets to gather resources like food, water, and fuel for survival.
+Game end condition could be when player reaches a certain distance or self-sufficiency.
+
+Might be necessary to include a Noah's Ark type aspect with plants and animals to make food system work.
+
+The planets could vary in gravity and density, forcing the player to adjust to various conditions. 
+Upgrades may include fuel quality, space suit properties, resource processing technologies.
+These upgrades should be accessable through mineral resources like silicon, iron, carbon, etc.
+Chemical processes should be greatly simplified for player experience.
 
 square planets
 hopping between planets
 
 Resources-
-Food
-Water
-Fuels-
+  Food
+  Water
+  Oxygen
 
+Fuels-
+  Solid Fuel 
+  Liquid Fuel
+  Ionized Gas
+  Nuclear Fission
+  
 Upgrades-
+
+Possibile Lines of Progression-
+  Oxygen: Thermite Reaction (Aluminum + Iron Oxide) > Electrolysis (Energy, Chlorine + Iron Oxide)
+  Pressure: Iron > Steel (Iron + Carbon) > Reinforced Steel Alloy (Steel, Nickel, Titanium, Molybdenum)
+  Temperature: Glass/Silicon > Plastic (Refined Oil, Sulfur) > Hafnium Carbide (Hafnium, Carbon)
+  Energy: Combustion (Solid Carbon + Oxygen) > Solar Energy (Silicon, Aluminum, Glass, Plastic) > Nuclear Fission (Uranium, Water)
+  Fuels: Solid Fuel (Sulfur, Carbon, Zinc) > Liquid Fuel (Liquid Oxygen, Liquid Hydrogen) > Ion (Xenon, Neodymium) > Nuclear (Uranium, Water)
+
+Suggested Resource Progression
+  Carbon, Sulfur >
+  Aluminum, Zinc + Copper >
+  Iron Oxide, Oil + Hydrogen >
+  Iron, Nickel, Oxygen + Chlorine >
+  Silicon, Hafnium, Titanium >
+  Liquid Elements, Xenon >
+  Molybdenum, Neodymium >
+  Uranium
+
+Technical Ideas:
+Planets are split into 4 sides. An active side is determined with a variable. When the player passes a point, the gravity and side switches.
+Sides are stored as tilemaps.
