@@ -6,6 +6,8 @@ let friction = 2; //multiplier momentum is reduced by every frame
 let inputMag = 6; //how much momentum a player inputs
 let gameHeight = window.innerHeight*0.8; //size of canvas height
 let gameWidth = window.innerWidth*0.9; //size of canvas width
+let sidebarWidth = gameWidth/2-gameHeight/2;
+let sidebarRow = gameHeight/10;
 let playerWidth = gridSpace;
 let playerHeight = gridSpace;
 let spawn;
@@ -14,7 +16,7 @@ let gravity = 0.5;
 let UIOn = false;
 
 
-let newPlayer;
+let player;
 let planet;
 
 //Movement
@@ -33,16 +35,17 @@ function preload() {
 function setup() {
   // Code here runs only once
   createCanvas(gameWidth, gameHeight);
-  rectMode(CORNER)
+  rectMode(CORNER);
   strokeWeight(0);
   fill(200);
   spawn = createVector(25*gridSpace,0);
-  newPlayer = new Player(spawn);
+  spawn = createVector(25*gridSpace,8*gridSpace)
+  player = new Player(spawn);
   planet = new Planet(50,0);
   cam1 = new Cam(spawn);
-  newPlayer.inventory.addItem(new Item("Food"));
-  newPlayer.inventory.addItem(new Item("Water"));
-  newPlayer.inventory.addItem(new Item("Rocks"));
+  player.inventory.addItem(new Item("Food"));
+  player.inventory.addItem(new Item("Water"));
+  player.inventory.addItem(new Item("Rocks"));
   
 }
 
@@ -53,14 +56,16 @@ function draw() {
    
   push();
   cam1.active();
-  newPlayer.update(planet);
-  newPlayer.move(planet.getTilemap());
+  player.update(planet);
+  player.move(planet.getTilemap());
   planet.show();
-  newPlayer.show();
+  player.show();
   pop();
   if(UIOn){
-    newPlayer.inventory.show(newPlayer.pos.x,newPlayer.pos.y);
-    console.log("😂😂");
+    player.inventory.show();
+    //console.log("😂😂");
+  } else {
+    player.inventory.selected()
   }
   showStats();
 }
@@ -68,54 +73,63 @@ function draw() {
 const make2Darray = (cols,rows) => new Array(cols).fill().map(item =>(new Array(rows)))
 
 function showStats(){
-  let stats = newPlayer.getStats();
+  let stats = player.getStats();
   push();
-  translate(width*0.8,height*0.1);
+  translate(width-sidebarWidth,height*0.02);
   rectMode(CORNER);
+  let top = -10
   let health = stats[0];
   stroke(150,150,150)
   strokeWeight(2)
-  fill(255,0,0,100)
-  rect(0,0, 250, 15, 10);
+  fill(150,150,150)
+  rect(0,top, sidebarWidth, 30, 10);
+  fill(255,0,0)
+  rect(0,top, (health/100)*sidebarWidth, 30, 10);
   
-  let oxygen = stats[0];
+  let oxygen = stats[1];
+  stroke(150,150,150);
+  strokeWeight(2);
+  fill(150,150,150);
+  rect((1-0.9)*sidebarWidth,top+35, sidebarWidth*0.9, 15, 10);
+  fill(255,255,255);
+  rect((1-0.9)*sidebarWidth,top+35, (oxygen/100)*sidebarWidth*0.9, 15, 10);
+  
+  let water = stats[2];
   stroke(150,150,150)
   strokeWeight(2)
-  fill(255,0,0,100)
-  rect(0,0, 250, 15, 10);
+  fill(150,150,150)
+  rect((1-0.8)*sidebarWidth,top+55, sidebarWidth*0.8, 15, 10);
+  fill(70,200,230)
+  rect((1-0.8)*sidebarWidth,top+55, (water/100)*sidebarWidth*0.8, 15, 10);
   
-  let food = stats[0];
+  let food = stats[3];
   stroke(150,150,150)
   strokeWeight(2)
-  fill(255,0,0,100)
-  rect(0,0, 250, 15, 10);
-  
-  let water = stats[0];
-  stroke(150,150,150)
-  strokeWeight(2)
-  fill(255,0,0,100)
-  rect(0,0, 250, 15, 10);
+  fill(150,150,150)
+  rect((1-0.7)*sidebarWidth,top+75, sidebarWidth*0.7, 15, 10);
+  fill(255,69,0)
+  rect((1-0.7)*sidebarWidth,top+75, (food/100)*sidebarWidth*0.7, 15, 10);
   pop();
 }
 
 function receiveInput(){
   if(keyIsDown(39)||keyIsDown(68)){
-    //newPlayer.vector.add(inputMag);
-    newPlayer.addForce(createVector(inputMag,0))
+    //player.vector.add(inputMag);
+    player.addForce(createVector(inputMag,0))
   }
   if(keyIsDown(37)||keyIsDown(65)){
-    //newPlayer.vector.sub(inputMag);
-    newPlayer.addForce(createVector(-inputMag,0))
+    //player.vector.sub(inputMag);
+    player.addForce(createVector(-inputMag,0))
   }
   if(keyIsDown(38)||keyIsDown(87)){
-    newPlayer.jump(7,planet.getTilemap());
+    player.jump(7,planet.getTilemap());
   }
 }
 
 function keyPressed(){
   if(keyIsDown(81)){
     if(UIOn){
-        newPlayer.inventory.switchItem();
+        player.inventory.switchItem();
       } else {
         UIOn = true;
       }
@@ -127,14 +141,23 @@ function keyPressed(){
 }
 
 function mouseClicked(){
+  let pos = createVector(mouseX,mouseY);
+  pos.sub(cam1.getPos());
+  pos.add(gameWidth/2,gameHeight/2);
+  pos.x = floor(pos.x/gridSpace)-54;
+  pos.y = floor(pos.y/gridSpace)-25;
+  console.log(pos)
+  planet.getTilemap()[pos.y][pos.x] = ".";
+  
+  
   for (var i=0;i<planet.getTilemap().length;i++){
-      for (var j=0;j<planet.getTilemap()[i].length;j++) {
-        if(collidePointRect(mouseX, mouseY,i*gridSpace,j*gridSpace,gridSpace,gridSpace)){
-          this.array[i][j] = ".";
-          console.log("Digging this");
-        }
+    for (var j=0;j<planet.getTilemap()[i].length;j++) {
+      if(collidePointRect(mouseX, mouseY,(j+i)*gridSpace,i*gridSpace,gridSpace,gridSpace)){
+        planet.getTilemap()[j][i] = ".";
+        console.log("Digging this");
       }
     }
+  }
 }
 
 class Cam {
@@ -158,6 +181,9 @@ class Cam {
   shift(x, y){
     this.x += x;
     this.y += y;
+  }
+  getPos(){
+    return createVector(this.x,this.y)
   }
 }
 

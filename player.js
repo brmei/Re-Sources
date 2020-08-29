@@ -15,16 +15,16 @@ class Player {
     this.inventory = new Backpack();
     this.saturationCon = 50;
     this.health = 100;
-    this.oxygen = 100;
-    this.food = 100;
-    this.water = 100;
+    this.oxygen = 50;
+    this.food = 1;
+    this.water = 50;
     this.dieingRate = 0;
     
     
   }
     
   getStats(){
-    return [this.health,this.oxygen,this.food,this.water];
+    return [this.health,this.oxygen,this.water,this.food];
   }
   
   show(){
@@ -54,22 +54,25 @@ class Player {
         this.vector.y = 0;//Stop when ground hit
       }
     }
-    
     let newPos = p5.Vector.add(this.pos,this.vector);//New position if moved
-    if(this.vector.x>0){//If moving right 
-      if(this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil(-1+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil((-1+(newPos.y)/gridSpace))))){
-        this.vector.x=0;
+    if(this.inTilemap(newPos.x,newPos.y)){
+      
+      if(this.vector.x>0){//If moving right 
+        if(this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil(-1+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil((-1+(newPos.y)/gridSpace))))){
+          this.vector.x=0;
+        }
+      }else if(this.vector.x<0){//If moving left
+        if(tilemap[floor((newPos.y-1)/gridSpace)][floor(newPos.x/gridSpace)]==","){
+           this.vector.x=0;
+        }
       }
-    }else if(this.vector.x<0){//If moving left
-      if(tilemap[floor((newPos.y-1)/gridSpace)][floor(newPos.x/gridSpace)]==","){
-         this.vector.x=0;
+      newPos = createVector(this.pos.x,this.pos.y+this.vector.y);
+      if(this.vector.y<0){//If moving up
+        if(this.collide(tilemap,createVector(floor((newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))){
+          this.vector.y=0;
+        }
       }
-    }
-    newPos = createVector(this.pos.x,this.pos.y+this.vector.y);
-    if(this.vector.y<0){//If moving up
-      if(this.collide(tilemap,createVector(floor((newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))){
-        this.vector.y=0;
-      }
+      
     }
 
   
@@ -119,22 +122,24 @@ class Player {
   
   update(planet){
     this.dieingRate = 0;
-    if(this.oxygen==0){
-      this.dieingRate+=1;
+    if(this.oxygen<=20){
+      this.dieingRate+=0.02*(20-this.oxygen);
     }
-    if(this.water==0){
-      this.dieingRate+=1;
+    if(this.water<=30){
+      this.dieingRate+=0.001*(30-this.water);
     }
-    if(this.food==0){
-      this.dieingRate+=1;
+    if(this.food<=50){
+      this.dieingRate+=0.0001*(50-this.food);
     }
     //Regeneration
     if(this.oxygen>this.saturationCon&&this.water>this.saturationCon&&this.food>this.saturationCon){
       this.dieingRate = -0.1;
     }
     
-    this.health+=this.dieingRate;
-    
+    this.health-=this.dieingRate;
+    if(this.health>100){
+      this.health=100;
+    }
   
 
   }
@@ -180,8 +185,6 @@ class Backpack {
   
   show(){
     fill(0);
-    let sidebarWidth = gameWidth/2-gameHeight/2;
-    let sidebarRow = gameHeight/10;
     rect(0,0,sidebarWidth,gameHeight);
     fill(50,200,50);
     textSize(sidebarRow/2);
@@ -189,23 +192,31 @@ class Backpack {
       if(this.select == i){
         rect(0, 0 + i*sidebarRow,sidebarWidth,sidebarRow);
         fill(0);
-        text(this.items[i].name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
+        text(this.items[i].count+" | "+this.items[i].name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
+        text(this.items[i].count,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
         fill(50,200,50);
       }
       else{
-       text(this.items[i].name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
+       text(this.items[i].count+" | "+this.items[i].name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
       }
     }
     //console.log(this.items);
   }
   selected() {
-    
+    fill(50,200,50);
+    textSize(sidebarRow/2);
+    rect(0, 0,sidebarWidth,sidebarRow,10);
+    fill(0);
+    text(this.items[this.select].count+" | "+this.items[this.select].name,sidebarRow/4,sidebarRow*3/4);
+    fill(50,200,50);
   }
 }
 
 class Item {
   constructor(name){
     this.name = name;
+    this.count = 1;
+    
   }
   name(){
     return this.name;
