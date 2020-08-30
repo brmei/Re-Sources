@@ -99,7 +99,7 @@ function setup() {
   
   player.inventory.addItem(new Item(lSpag.id,lSpag.count));
   player.inventory.addItem(new Item(water.id,water.count));
-  player.inventory.addItem(new Item(oxy.id,oxy.count));
+  player.inventory.addItem(new Item(oxy.id,3));
   player.inventory.addItem(new Item(ap.id,ap.count));
   
   
