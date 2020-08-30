@@ -7,13 +7,14 @@ let inputMag = 6; //how much momentum a player inputs
 let gameHeight = window.innerHeight*0.8; //size of canvas height
 let gameWidth = window.innerWidth*0.9; //size of canvas width
 //let gameHeight = 800 //size of canvas height
-//let gameWidth = 1700; //size of canvas width
+//let gameWidth = 1700; //size of canvas widthee
+
 let sidebarWidth = gameWidth/2-gameHeight/2;
 let sidebarRow = gameHeight/10;
 let playerWidth = gridSpace;
 let playerHeight = gridSpace;
 let spawn;
-let cam1;
+//let cam1;
 let gravity = 0.5;
 let UIOn = false;
 let inRange = false;
@@ -21,6 +22,14 @@ let inRange = false;
 let player;
 let planet;
 
+//Items
+let lSpag;
+let water;
+let oxy;
+let SO;
+
+//Recipes
+let SO_r; //Spaghetti-Oxide
 //Movement
 
 
@@ -43,11 +52,20 @@ function setup() {
   spawn = createVector(25*gridSpace,0);
   spawn = createVector(25*gridSpace,8*gridSpace)
   player = new Player(spawn);
-  planet = new Planet(50,0);
-  cam1 = new Cam(spawn);
-  player.inventory.addItem(new Item(0,5));
-  player.inventory.addItem(new Item(1,1));
-  player.inventory.addItem(new Item(2,1));
+  planet = new Planet(100,30);
+  //cam1 = new Cam(spawn);
+  //items
+  lSpag = new Item(0,5);
+  water = new Item(1,1);
+  oxy = new Item(2,1);
+  SO = new Item(3,1);
+  
+  //recipes
+  SO_r = new Recipe(SO,[lSpag,water,oxy]);
+  
+  player.inventory.addItem(lSpag);
+  player.inventory.addItem(water);
+  player.inventory.addItem(oxy);
   
 }
 
@@ -67,7 +85,6 @@ function draw() {
   planet.show();
   player.show();
   ellipse(player.pos.x + playerWidth/2,player.pos.y - playerHeight/2,20);
-  //inRange = dist(mouseX,mouseY,player.pos.x + playerWidth/2 - cam1.x,player.pos.y - playerHeight/2 - cam1.y) < gridSpace * 3;
   
   pop();
   if(UIOn){
@@ -173,6 +190,8 @@ function keyPressed(){
     UIOn = false;
   } else if(keyIsDown(32)){
      player.inventory.useItem();
+  } else if(keyIsDown(49)){
+    console.log(SO_r.canCraft());
   } else if(keyIsDown(85)){
     
   }
@@ -180,33 +199,15 @@ function keyPressed(){
 
 
 function mouseClicked(){
-  //translate(this.x + (gameWidth - player.getWidth()) / 2,this.y + (gameHeight - player.getHeight()) / 2);
-  let pos = createVector(mouseX+(-player.getPos().x+gameWidth/2),mouseY+(-player.getPos().y+gameHeight/2));
-  //console.log(mouseX,mouseY)
-  //console.log(player.getPos())
-  //pos = createVector(pos.x+player.getPos().x -gameWidth/2 + (gameWidth-player.getWidth())/2,pos.y+player.getPos().y + (gameHeight-player.getHeight())/2);
+  let pos = createVector(mouseX-(-player.getPos().x+gameWidth/2),mouseY-(-player.getPos().y+gameHeight/2));
   pos.x = floor(pos.x/gridSpace)//-54;
   pos.y = floor(pos.y/gridSpace)//-24;
-  //console.log(pos)
-  
-  
-  if (!planet.getRelativeTilemap(0).inTilemap(pos.x,pos.y)) {
+  if (planet.getRelativeTilemap(0).inTilemap(pos.x,pos.y)) {
     planet.getRelativeTilemap(0).mine(pos.y,pos.x);
   }
-    //planet.getTilemap()[pos.y][pos.x] = ".";
-  
-  /*
-  for (var j=0;j<planet.getTilemap().length;j++){
-    for (var i=0;i<planet.getTilemap()[i].length;i++) {
-      if(collidePointRect(mouseX, mouseY,(j+i)*gridSpace,i*gridSpace,gridSpace,gridSpace)){
-        planet.getTilemap()[j][i] = ".";
-        console.log("Digging this");
-      }
-    }
-  }*/
 }
 
-class Cam {
+/*class Cam {
   constructor(spawnpoint) {
     this.x = -spawnpoint.x;
     this.y = -spawnpoint.y;
@@ -231,23 +232,11 @@ class Cam {
   getPos(){
     return createVector(this.x,this.y)
   }
-}
+}*/
 
 
 
-class Ship {
-  constructor(x,y) {
-    this.pos = createVector(x,y);
-    this.fuel;
-    this.energy;
-    
-  }
-  
-  playerClose(player) {
-    if(this.pos.sub(player.pos).mag() < 3*gridSpace) return true;
-  }
-  showButtons() {}
-}
+
 
 class Tilemap {
   
@@ -275,9 +264,45 @@ class Tilemap {
     // this.array [10][15]= "w";
     // this.array [9][15]= "w";
     // this.array [8][15]= "w";
-    // this.array [10][16]= "w";
-    // this.array [9][16]= "w";
-    // this.array [8][16]= "w";
+    this.tree(16,9);
+  }
+  
+  tree(x,y){
+    let height = floor(random(2,6));
+    for(let i=0;i<height;i++){
+      this.array[y-i][x] = "tree";
+    }
+    this.array[y-height][x] = "leaf";
+    if(random(1)<0.3){
+      this.array[y-height-1][x+1] = "leaf";
+    }
+    if(random(1)<0.3){
+      this.array[y-height-1][x-1] = "leaf";
+    }
+    if(random(1)<0.3){
+      this.array[y-height+1][x+1] = "leaf";
+      if(height>3){
+        if(random(1)<0.5){
+          this.array[y-height-1][x+1] = "leaf";
+        }
+      }
+    }
+    if(random(1)<0.3){
+      this.array[y-height+1][x-1] = "leaf";
+      if(height>3){
+        if(random(1)<0.5){
+          this.array[y-height-1][x-1] = "leaf";
+        }
+      }
+    }
+    
+    
+    if(height>5){
+      if(random(1)<0.85){
+        this.array[y-2][x+1] = "leaf";
+      }
+    }
+ 
   }
   
   tempGen(){
@@ -309,59 +334,84 @@ class Tilemap {
   }
   
   show(s){
+    
     //for every tile create tile object
+    let renderDis = sqrt(pow(ceil(gameHeight/2),2) + pow(ceil(gameWidth/2),2));
+    let seenY = false;
+    let stopY = false;
     for (var i=0;i<this.array.length;i++){
-      for (var j=0;j<this.array[i].length-2*i;j++) {
-        var tileTexture;
-        //temporary color
-        switch (this.array[i][j+i]) {
-          case ".":
-            fill(0,0,0,0)
-            break;
-          case ",":
-            fill(100,100,100);
-            break;
-          case "s":
-            fill(200,0,0);
-            break;
-          case "w":
-            fill(0,0,100);
-            break;
-          case "m":
-            fill(0,200,0);
-            break;
-          default:
-            break;
+      if(stopY==false) {
+        let seenX = false;
+        let stopX = false;
+        for (var j=0;j<this.array[i].length-2*i;j++) {
+          var tileTexture;
+          //temporary color
+          switch (this.array[i][j+i]) {
+            case ".": //void
+              fill(0,0,0,0)
+              break;
+            case ",": //moon soil lol
+              fill(100,100,100);
+              break;
+            case "s": //ship
+              fill(200,0,0);
+              break;
+            case "w": //water
+              fill(0,0,100);
+              break;
+            case "m": //iron oxide
+              fill(166,52,30);
+              break;
+            case "tree": //tree
+              fill(83, 49, 24);
+              break;
+            case "leaf":
+              fill(107,142,35);
+              break;
+            default:
+              break;
+          }
+          let newTile = createVector(0,0);
+          switch (s) {
+            case 0:
+              //console.log((j+i)*gridSpace,i*gridSpace)
+              newTile.set((j+i)*gridSpace,i*gridSpace);
+              break;
+            case 1:
+              newTile.set((planet.size-i)*gridSpace,(j+i)*gridSpace);
+              break;
+            case 2:
+              newTile.set((planet.size-j-i)*gridSpace,(planet.size-i)*gridSpace);
+              break;
+            case 3:
+              newTile.set(i*gridSpace,(planet.size-j-i)*gridSpace);
+              break;
+            default:
+              break;
+          }
+          if(stopX==false) {
+            if ((newTile.dist(player.pos)<renderDis)) {
+              seenX = true;
+              seenY = true;
+              rect(newTile.x,newTile.y,gridSpace,gridSpace);
+            } else {
+              if(seenX){
+                stopX = true;
+              }
+            }
+          }
+          //rect(newTile.x,newTile.y,gridSpace,gridSpace);
         }
-        switch (s) {
-          case 0:
-            //console.log((j+i)*gridSpace,i*gridSpace)
-            rect((j+i)*gridSpace,i*gridSpace,gridSpace,gridSpace);
-            break;
-          case 1:
-            rect((planet.size-i)*gridSpace,(j+i)*gridSpace,gridSpace,gridSpace);
-            break;
-          case 2:
-            rect((planet.size-j-i)*gridSpace,(planet.size-i)*gridSpace,gridSpace,gridSpace);
-            break;
-          case 3:
-            rect(i*gridSpace,(planet.size-j-i)*gridSpace,gridSpace,gridSpace);
-            break;
-          default:
-            break;
-        }
+      } else if (seenY) {
+        stopY = true;
       }
     }
   }
+  
+  
   mine (y,x) {
-  //console.log(player.pos)
-
-    console.log(dist((player.getWidth()/2)+(player.pos.x)/gridSpace,-player.getHeight()+(player.pos.y)/gridSpace,x,y));
-    console.log(player.getHeight())
-    fill(0);
-    ellipse(player.pos.x/gridSpace,player.pos.y/gridSpace,20);
-    if(dist((player.pos.x)/gridSpace,-player.getHeight()+(player.pos.y)/gridSpace,x,y) >0){
-      console.log("Hi mom");
+    if(dist((player.pos.x-player.getWidth()/2)/gridSpace,-player.getHeight()/2+(player.pos.y)/gridSpace,x,y) <3){
+      //console.log("Hi mom");
       planet.getTilemap()[y][x] = ".";
     }
       
@@ -373,19 +423,16 @@ class Tilemap {
 
 class Planet {
 
-  constructor(size,richness) {
+  constructor(size,intensity) {
+    this.type = createVector(randomGaussian(255/2,intensity),randomGaussian(255/2,intensity));
+    //console.log(this.type)
     this.side = 0;
     this.size = size;
-    this.richness = richness;
     this.atmosphere = 8;
     this.sideN = new Tilemap(size,floor(size/2),this.generateLandscape());
-    //this.sideN.tempGen();
     this.sideE = new Tilemap(size,floor(size/2),this.generateLandscape());
-    //    this.sideE.tempGen();
     this.sideS = new Tilemap(size,floor(size/2),this.generateLandscape());
-    //  this.sideS.tempGen();
     this.sideW = new Tilemap(size,floor(size/2),this.generateLandscape());
-    //  this.sideW.tempGen();
   }
   
   getRelativeTilemap(n) {
@@ -419,16 +466,21 @@ class Planet {
     let minHeight = maxHeight*0.7;
     //console.log(length)
     let heights = [];
-    let r = random(10)
+    let r = random(10);
     for(let i=0;i<length;i++){
+      let b = this.calculateCircularHeight(i,sqrt((pow(length/2),2)*2));
+      //console.log("add " + b + "from " + i + " and " + length);
       let angle = i*2*PI/length;
-      let height = minHeight+(maxHeight-minHeight)*noise(r*cos(angle),r*sin(angle))
+      let height = minHeight+(maxHeight-minHeight)*noise(r*cos(angle),r*sin(angle)+b);
       heights.push(height);
     }
     //console.log(heights)
     return heights;
   }
   
+  calculateCircularHeight (x,r) {
+    return sqrt(( (pow(r,2))+(2*sqrt(2)*x*r)-(2*pow(x,2)) )/2) - sqrt(2)*r/2;
+  }
   
   rotate(n){
     this.side = (this.side+n+4)%4;
