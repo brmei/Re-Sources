@@ -45,3 +45,15 @@ Suggested Resource Progression
 Technical Ideas:
 Planets are split into 4 sides. An active side is determined with a variable. When the player passes a point, the gravity and side switches.
 Sides are stored as tilemaps.
+UI Implementaion:
+Pressing Q once will bring up the inventory. Repeated presses allow the player to cycle through their items. TAB closes the inventory menu.
+
+Planet Types:
+-Forests
+-Desert
+-Volcanic
+-Cold
+-Dark
+-Gassy
+-Hot
+-Water

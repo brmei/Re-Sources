@@ -38,7 +38,6 @@ class Player {
   }
   
   show(){
-    cam1.snap(-this.pos.x,-this.pos.y)
     fill(255,255,255);
     rect(this.pos.x,this.pos.y,gridSpace*this.width,-gridSpace*this.height);
   }
@@ -65,25 +64,25 @@ class Player {
       }
     }
     let newPos = p5.Vector.add(this.pos,this.vector);//New position if moved
-    if(this.inTilemap(newPos.x,newPos.y)){
       
-      if(this.vector.x>0){//If moving right 
-        if(this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil(-1+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil((-this.height+(newPos.y)/gridSpace))))){
-          this.vector.x=0;
-        }
-      }else if(this.vector.x<0){//If moving left
-        if(tilemap[floor((newPos.y-1)/gridSpace)][floor(newPos.x/gridSpace)]==","||tilemap[floor((newPos.y-this.height)/gridSpace)][floor(newPos.x/gridSpace)]==","){
-           this.vector.x=0;
-        }
+    if(this.vector.x>0){//If moving right 
+      if(this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil(-1+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),ceil((-this.height+(newPos.y)/gridSpace))))){
+        this.vector.x=0;
       }
-      newPos = createVector(this.pos.x,this.pos.y+this.vector.y);
-      if(this.vector.y<0){//If moving up
-        if(this.collide(tilemap,createVector(floor((newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))){
-          this.vector.y=0;
-        }
+    }else if(this.vector.x<0){//If moving left
+      if(this.collide(tilemap,createVector(floor(newPos.x/gridSpace),floor((newPos.y-1)/gridSpace)))||this.collide(tilemap,createVector(floor(newPos.x/gridSpace),floor((newPos.y-this.height)/gridSpace)))){
+        this.vector.x=0;
       }
-      
+
     }
+    newPos = createVector(this.pos.x,this.pos.y+this.vector.y);
+    if(this.vector.y<0){//If moving up
+      if(this.collide(tilemap,createVector(floor((newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))||this.collide(tilemap,createVector(floor(this.width+(newPos.x)/gridSpace),floor(-this.height+(newPos.y/gridSpace))))){
+        this.vector.y=0;
+      }
+    }
+
+    
 
   
     this.rotatePlanet(planet);
@@ -110,7 +109,7 @@ class Player {
   }
   collide(tilemap,pos){
     if (!this.inTilemap(pos.x,pos.y)) return false;
-    return (tilemap[pos.y][pos.x]==",");
+    return (tilemap[pos.y][pos.x]=="," || tilemap[pos.y][pos.x]=="tree");
   }
   
   jump(inputMag,tilemap){
@@ -201,7 +200,7 @@ class Backpack {
           player.oxygen += 10;
           break;
         default:
-          null;
+          return null;
       }
     this.items[this.select].count -= 1;
    
@@ -212,7 +211,10 @@ class Backpack {
       
     }
   }
-  
+  deleteItem(index){
+    this.items.splice(index, 1);
+    if(this.select>0){this.select--}
+  }
   show(){
     fill(0);
     rect(0,0,sidebarWidth,gameHeight);
@@ -263,3 +265,45 @@ class Item {
   }
 }
 
+class Ship {
+  constructor(x,y) {
+    this.pos = createVector(x,y);
+    this.fuel;
+    this.energy;
+    
+  }
+  
+  playerClose(player) {
+    if(this.pos.sub(player.pos).mag() < 3*gridSpace) return true;
+  }
+  showCraftMenu() {
+    
+  }
+}
+
+class Recipe {
+  constructor(item,ingredients = []){
+    this.item = item;
+    this.ingredients = ingredients;
+  }
+  canCraft(){
+    for(let i = 0; i < this.ingredients.length; i++){
+      for(let e = 0; e < player.inventory.items.length; e++){
+        if(player.inventory.items[e].id == this.ingredients[i].id){break}
+        if(e == player.inventory.items.length - 1){return false}
+      }
+    }
+    return true;
+  }
+  craft(){
+    for(let i = 0; i < this.ingredients.length; i++){
+      for(let e = 0; e = player.inventory.items; e++){
+        if(player.inventory.items[e] == this.ingredients[i]){
+          player.inventory.items.deleteItem[e];
+          break;
+        }
+      }
+    }
+    player.inventory.items.addItem(item);
+  }
+}
