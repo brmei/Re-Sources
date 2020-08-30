@@ -88,7 +88,7 @@ class Backpack {
     fill(50,200,50);
     textSize(sidebarRow/2);
     let strName = this.items[this.select].count+" | "+this.items[this.select].name();
-    rect(0, 0 + this.select*sidebarRow,textWidth(strName)+sidebarRow*3/4,sidebarRow);
+    rect(0, 0,textWidth(strName)+sidebarRow*3/4,sidebarRow);
     rect(0, 0,sidebarWidth,sidebarRow,10);
     fill(0);
     text(this.items[this.select].count+" | "+this.items[this.select].name(),sidebarRow/4,sidebarRow*3/4);
@@ -172,6 +172,12 @@ class CraftMenu {
     this.available = [];
     this.select = 0;
   }
+  switchRecipe(){
+    this.select++;
+    if(this.select == this.available.length){
+      this.select = 0;
+    }
+  }
   update(){
     this.available = [];
     for(let i = 0; i < this.recipes.length; i++){
@@ -182,20 +188,20 @@ class CraftMenu {
   }
   show(){
     fill(0);
-    rect(0,0,sidebarWidth,gameHeight);
+    rect(0,0,gameWidth/2,gameHeight);
     fill(50,200,50);
     textSize(sidebarRow/2);
     for(let i = 0; i < this.available.length; i++){
       if(this.select == i){
-        let strName = this.available[i].item.name;
+        let strName = this.available[i].item.name();
         rect(0, 0 + i*sidebarRow,textWidth(strName)+sidebarRow*3/4,sidebarRow);
         rect(0, 0 + i*sidebarRow,sidebarWidth,sidebarRow,10);
         fill(0);
-        text(this.available[i].item.name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
+        text(this.available[i].item.name(),sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
         fill(50,200,50);
       }
       else{
-       text(this.available[i].item.name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
+       text(this.available[i].item.name(),sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
       }
     }
     //console.log(this.items);

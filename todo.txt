@@ -1,4 +1,3 @@
-add bedrock type thing
 add ores
 add mining drops
 new planets

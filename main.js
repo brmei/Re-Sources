@@ -193,6 +193,7 @@ function keyPressed(){
         player.inventory.switchItem();
       } else {
         UIOn = true;
+        craftOn = false;
       }
   } else if(keyIsDown(27)) {
     UIOn = false;
@@ -202,10 +203,12 @@ function keyPressed(){
   } else if(keyIsDown(49)){
     console.log(SO_r.canCraft());
   } else if(keyIsDown(67)){
-    craftOn = true;
-  }
-  else if(keyIsDown(50)){
-    SO_r.craft();
+    if(craftOn){
+      shipCraft.switchRecipe();
+    } else{
+      craftOn = true;
+      UIOn = false;
+    }
   }
 }
 
@@ -291,6 +294,10 @@ class Planet {
     return ",";
   }
   
+  getPlanetDifficulty(t) {
+    return abs(t.x-127)+t.y;
+  }
+  
   getRelativeTilemap(n) {
     //rotates 90 degrees for every increment of n
     switch ((this.side+n)%4) {
@@ -322,19 +329,30 @@ class Planet {
     let minHeight = maxHeight*0.7;
     //console.log(length)
     let heights = [];
-    let r = random(10);
+    //let r = random(10);
     for(let i=0;i<length;i++){
-      let b = this.calculateCircularHeight(i,sqrt((pow(length/2),2)*2));
+      let temp = (this.size-2*this.atmosphere)/2;
+      let r = sqrt(pow(temp,2)+pow(temp,2));
+      let b = this.calculateCircularHeight(i,sqrt((pow(length/2),2)*2),length);
       //console.log("add " + b + "from " + i + " and " + length);
       let angle = i*2*PI/length;
-      let height = minHeight+(maxHeight-minHeight)*noise(r*cos(angle),r*sin(angle)+b);
+      console.log(b)
+      let height = floor(b);
+      //let height = minHeight+(maxHeight-minHeight)*noise(r*cos(angle),r*sin(angle)+b);
       heights.push(height);
     }
     //console.log(heights)
     return heights;
   }
   
-  calculateCircularHeight (x,r) {
+  calculateCircularHeight (x,r,length) {
+    //console.log(( (pow(r,2))+(2*sqrt(2)*x*r)-(2*pow(x,2)) )/2)
+    console.log(x)
+    if(x<length/2){
+      return x;      
+    }else{
+      return length-x;  
+    }  
     return sqrt(( (pow(r,2))+(2*sqrt(2)*x*r)-(2*pow(x,2)) )/2) - sqrt(2)*r/2;
   }
   

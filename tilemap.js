@@ -7,11 +7,14 @@ class Tilemap {
   }
   
   Gen(heightMap,b){
+    //fill with air
     for (let i=0;i<this.array.length;i++){
       for (let j=0;j<this.array[i].length;j++) {
         this.array[i][j] = ".";
       }
     }
+    
+    //apply terrain height
     let start = (this.array[0].length-heightMap.length)/2;
     for(let y=0;y<this.array.length;y++){
       for(let x=0;x<heightMap.length;x++){
@@ -20,11 +23,25 @@ class Tilemap {
         }
       }
     }
+    
+    //add core
+    for(let i=0;i<this.array[0].length;i++) {
+      this.array[this.array.length-1][i] = "z";
+    }
+    // for(let i=0; i<this.array.length;i++) {
+    //   this.array[0][i] = "z";
+    // }
+    
+    //debug tiles
     // this.array [10][14]= "s";
     // this.array [10][15]= "w";
     // this.array [9][15]= "w";
     // this.array [8][15]= "w";
     //this.tree(16,9);
+  }
+  
+  generateOres (density) {
+    noise()
   }
   
   tree(x,y) {
@@ -65,29 +82,29 @@ class Tilemap {
  
   }
   
-  tempGen() {
-        //, blocks
-    //. air
-    //temporary pregenerated tilemap
-    for (var i=0;i<this.array.length;i++){
-      for (var j=0;j<this.array[i].length;j++) {
-        this.array[i][j] = ",";
-      }
-    }
-    for (var i=0;i<floor(this.array.length/2);i++){
-      for (var j=0;j<this.array[i].length;j++) {
-        this.array[i][j] = ".";
-      }
-    }
-        this.array[10][27] = ",";
-    this.array[11][27] = ",";
-        this.array[11][28] = ",";
-           this.array[8][24] = ",";
+//   tempGen() {
+//         //, blocks
+//     //. air
+//     //temporary pregenerated tilemap
+//     for (var i=0;i<this.array.length;i++){
+//       for (var j=0;j<this.array[i].length;j++) {
+//         this.array[i][j] = ",";
+//       }
+//     }
+//     for (var i=0;i<floor(this.array.length/2);i++){
+//       for (var j=0;j<this.array[i].length;j++) {
+//         this.array[i][j] = ".";
+//       }
+//     }
+//         this.array[10][27] = ",";
+//     this.array[11][27] = ",";
+//         this.array[11][28] = ",";
+//            this.array[8][24] = ",";
     
-    this.array [11][15]= "s";
+//     this.array [11][15]= "s";
     
-    // 
-  }
+//     // 
+//   }
   
   getArray(){
     return this.array;
@@ -109,6 +126,9 @@ class Tilemap {
           switch (this.array[i][j+i]) {
             case ".": //void
               fill(0,0,0,0)
+              break;
+            case "z": //core
+              fill(34,34,36);
               break;
             case "s": //ship
               fill(200,0,0);
@@ -191,8 +211,12 @@ class Tilemap {
   
   tileMiningLevel (t) {
     switch (t) {
+      case ".":
+        return 255;
       case "m":
         return 0;
+      case "z":
+        return 255;
       default:
         return 0;
     }
