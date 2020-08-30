@@ -112,6 +112,10 @@ class Player {
     switch (tilemap[pos.y][pos.x]) {
       case ".":
         return false;
+      case "w":
+        return false;
+      case "s":
+        return false;
       default:
         return true;
     }

@@ -21,6 +21,7 @@ let craftOn = false; //Is the crafting list open?
 let inRange = false;
 
 let player;
+let ship;
 let planet;
 
 //Items
@@ -28,20 +29,32 @@ let lSpag;
 let water;
 let oxy;
 let SO;
+let steam;
 
 //Recipes
 let shipCraft;
 let SO_r; //Spaghetti-Oxide
+let steam_r;
 //Movement
 
 
 //Music
+let juke;
+let beep;
+let boop;
 let space1;
+let space2;
+let heat;
+let current;
 
 
 function preload() {
   soundFormats("mp3");
+  beep = loadSound("https://cdn.glitch.com/d1474153-2476-47c8-9888-60d3a5c02c62%2FBeep_1-%5BAudioTrimmer.com%5D.mp3?v=1598781958120");
+  boop = loadSound("https://cdn.glitch.com/d1474153-2476-47c8-9888-60d3a5c02c62%2FreverseBoop.mp3?v=1598782179880");
   space1 = loadSound("https://cdn.glitch.com/16c26bfa-0e05-488d-8525-9a6fbe0379a6%2FSpace_1.mp3?v=1598642738842");
+  space2 = loadSound("https://cdn.glitch.com/d1474153-2476-47c8-9888-60d3a5c02c62%2FSpace_2.mp3?v=1598781729912");
+  heat = loadSound("https://cdn.glitch.com/d1474153-2476-47c8-9888-60d3a5c02c62%2FHeat.mp3?v=1598781734126");
 }
 
 
@@ -52,25 +65,30 @@ function setup() {
   strokeWeight(0);
   fill(200);
   spawn = createVector(25*gridSpace,0);
-  spawn = createVector(25*gridSpace,8*gridSpace)
+  spawn = createVector(25*gridSpace,1*gridSpace)
   player = new Player(spawn);
-  planet = new Planet(50,30);
+  planet = new Planet(40,30);
   //cam1 = new Cam(spawn);
   //items
   lSpag = new Item(0,5);
   water = new Item(1,1);
   oxy = new Item(2,1);
   SO = new Item(3,1);
+  steam = new Item(4,4);
   
   //recipes
   
   SO_r = new Recipe(SO,[lSpag,water,oxy],[2,1,1]);
-  shipCraft = new CraftMenu([SO_r]);
+  steam_r = new Recipe(steam,[water,oxy],[1,1]);
+  shipCraft = new CraftMenu([SO_r,steam_r]);
   
   player.inventory.addItem(new Item(lSpag.id,lSpag.count));
   player.inventory.addItem(new Item(water.id,water.count));
   player.inventory.addItem(new Item(oxy.id,oxy.count));
   
+  
+  
+  juke = new Jukebox();
 }
 
 //document.getElementsByTagName("canvas").addEventListener('contextmenu', event => event.preventDefault());//Disable right click
@@ -188,27 +206,35 @@ function receiveInput(){
 }
 
 function keyPressed(){
+  
   if(keyIsDown(69)){
     if(UIOn){
         player.inventory.switchItem();
       } else {
+        beep.play();
         UIOn = true;
         craftOn = false;
       }
   } else if(keyIsDown(27)) {
     UIOn = false;
     craftOn = false;
+    boop.play();
   } else if(keyIsDown(32)){
      player.inventory.useItem();
   } else if(keyIsDown(49)){
     console.log(SO_r.canCraft());
   } else if(keyIsDown(67)){
-    if(craftOn){
-      shipCraft.switchRecipe();
-    } else{
-      craftOn = true;
-      UIOn = false;
+    if (ship.playerClose(player)) {
+      if(craftOn){
+        shipCraft.switchRecipe();
+      } else{
+        beep.play();
+        craftOn = true;
+        UIOn = false;
+      }
     }
+  } else if(craftOn && keyIsDown(13)){
+      shipCraft.craftSelected();
   }
 }
 
@@ -253,16 +279,17 @@ class Planet {
 
   constructor(size,intensity) {
     this.type = createVector(randomGaussian(255/2,intensity),abs(randomGaussian(511/2,intensity)-256));
-    console.log(this.type);
+    //console.log(this.type);
     this.base = this.parseType(this.type);
-    console.log(this.base);
+    //console.log(this.base);
     this.side = 0;
     this.size = size;
     this.atmosphere = 8;
-    this.sideN = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base);
-    this.sideE = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base);
-    this.sideS = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base);
-    this.sideW = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base);
+    this.sideN = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base,0);
+    this.sideE = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base,1);
+    this.sideS = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base,2);
+    this.sideW = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base,3);
+    
   }
   
   parseType(t) {
@@ -329,31 +356,27 @@ class Planet {
     let minHeight = maxHeight*0.7;
     //console.log(length)
     let heights = [];
-    //let r = random(10);
+    let r = random(10);
     for(let i=0;i<length;i++){
-      let temp = (this.size-2*this.atmosphere)/2;
-      let r = sqrt(pow(temp,2)+pow(temp,2));
-      let b = this.calculateCircularHeight(i,sqrt((pow(length/2),2)*2),length);
-      //console.log("add " + b + "from " + i + " and " + length);
+      //let r = sqrt(pow(length/2,2)+pow(length,2));
+      let b = this.calculateCircularHeight(i,length);
       let angle = i*2*PI/length;
-      console.log(b)
-      let height = floor(b);
+      //console.log(b)
+      let offset = -(r/2)+r*noise(r*cos(angle),r*sin(angle)+b/2)
+      if(i<=1||i>=length-2){
+        offset=0;
+      }
+      //console.log(offset)
+      let height = floor(b+offset);
       //let height = minHeight+(maxHeight-minHeight)*noise(r*cos(angle),r*sin(angle)+b);
       heights.push(height);
     }
-    //console.log(heights)
+    console.log(heights)
     return heights;
   }
   
-  calculateCircularHeight (x,r,length) {
-    //console.log(( (pow(r,2))+(2*sqrt(2)*x*r)-(2*pow(x,2)) )/2)
-    console.log(x)
-    if(x<length/2){
-      return x;      
-    }else{
-      return length-x;  
-    }  
-    return sqrt(( (pow(r,2))+(2*sqrt(2)*x*r)-(2*pow(x,2)) )/2) - sqrt(2)*r/2;
+  calculateCircularHeight (x,l) {
+    return (length/2)+sqrt(pow(l/2,2)+pow(l/2,2)-pow(x-(l/2),2));
   }
   
   rotate(n){

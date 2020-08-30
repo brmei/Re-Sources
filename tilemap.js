@@ -1,12 +1,12 @@
 class Tilemap {
   
-  constructor(x,y,heightMap,t,b) {
+  constructor(x,y,heightMap,t,b,s) {
     this.array = make2Darray(y,x);
-    this.Gen(heightMap,b);
+    this.Gen(heightMap,t,b,s);
     //this.tempGen();
   }
   
-  Gen(heightMap,b){
+  Gen(heightMap,t,b,s){
     //fill with air
     for (let i=0;i<this.array.length;i++){
       for (let j=0;j<this.array[i].length;j++) {
@@ -23,6 +23,10 @@ class Tilemap {
         }
       }
     }
+    
+    //this.generateOres(t.y);
+    
+    if (s==0) {this.generateShip();}
     
     //add core
     for(let i=0;i<this.array[0].length;i++) {
@@ -41,7 +45,32 @@ class Tilemap {
   }
   
   generateOres (density) {
-    noise()
+    let oreThreshold = 128;
+    for (let i=0;i<this.array.length;i++){
+      for (let j=0;j<this.array[i].length;j++) {
+        if (this.array[i][j]) {
+          if (density*noise(i,j)>oreThreshold) {
+            this.array[i][j]="b";
+          }
+        }
+      }
+    }
+  }
+  
+  generateShip () {
+    let x = floor(this.array[0].length/2);
+    for (let i=0;i<this.array.length;i++) {
+      if (this.array[i][x]!=".") {
+        ship = new Ship(x*gridSpace,i*gridSpace);
+        this.array[i][x] = "s";
+        this.array[i][x+1] = "s";
+        this.array[i][x-1] = "s";
+        this.array[i+1][x+1] = "s";
+        this.array[i+1][x-1] = "s";
+        if (!i-1<0) {this.array[i-1][x] = "s";}
+        break;
+      }
+    }
   }
   
   tree(x,y) {
@@ -125,13 +154,13 @@ class Tilemap {
           //temporary color
           switch (this.array[i][j+i]) {
             case ".": //void
-              fill(0,0,0,0)
+              fill(0,0,0)
               break;
             case "z": //core
               fill(34,34,36);
               break;
             case "s": //ship
-              fill(200,0,0);
+              fill(0,13,255);
               break;
             case "w": //water
               fill(0,0,100);

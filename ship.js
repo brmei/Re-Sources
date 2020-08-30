@@ -111,6 +111,8 @@ class Item {
         return "Oxygen Tank";
       case 3:
         return "SO"; //Spaghetti Oxide
+      case 4:
+        return "Steam"; 
       case 64:
         return "Iron Oxide"
       default:
@@ -129,11 +131,12 @@ class Ship {
   }
   
   playerClose(player) {
-    if(this.pos.sub(player.pos).mag() < 3*gridSpace) return true;
+    let difference = createVector(this.pos.x-player.pos.x,this.pos.y-player.pos.y);
+    return difference.mag() < 3*gridSpace;
   }
-  showCraftMenu() {
+//   showCraftMenu() {
     
-  }
+//   }
 }
 
 class Recipe {
@@ -185,6 +188,10 @@ class CraftMenu {
         append(this.available, this.recipes[i]);
       }
     }
+  }
+  craftSelected(){
+    this.available[this.select].craft();
+    this.update();
   }
   show(){
     fill(0);
