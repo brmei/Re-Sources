@@ -35,7 +35,10 @@ class Tilemap {
     // for(let i=0; i<this.array.length;i++) {
     //   this.array[0][i] = "z";
     // }
-    
+    for(let i=0;i<this.array.length;i++){
+      this.array[i][0]="."
+    }
+    console.log(this.rarray)
     //debug tiles
     // this.array [10][14]= "s";
     // this.array [10][15]= "w";
@@ -154,7 +157,7 @@ class Tilemap {
           //temporary color
           switch (this.array[i][j+i]) {
             case ".": //void
-              fill(0,0,0)
+              fill(0,0,0,0)
               break;
             case "z": //core
               fill(34,34,36);
@@ -172,10 +175,13 @@ class Tilemap {
               fill(100,100,100);
               break;
             case "w": //white stone
+              fill(255,255,255);
               break;
             case "d": //sand
+              fill(245,245,230);
               break;
             case "i": //ice
+              fill(235, 253, 255);
               break;
             case "b": //black stone
               fill(0);
@@ -226,14 +232,18 @@ class Tilemap {
     }
   }
   
-  mine (y,x) {
+  mine (y,x,mouseX,mouseY) {
+    let pos = createVector(gridSpace*x+(-player.getPos().x+gameWidth/2),gridSpace*y+(-player.getPos().y+gameHeight/2));
     if(dist((player.pos.x-player.getWidth()/2)/gridSpace,-player.getHeight()/2+(player.pos.y)/gridSpace,x,y) <3){
       //console.log("Hello mother");
       console.log(player.mining);
       let tileId = planet.getTilemap()[y][x];
       if (this.tileMiningLevel(tileId)<=player.mining) {
+        //console.log(mouseX,mouseY)
+        systems.push(new particleSystem(createVector((x+0.5)*gridSpace,(y+0.5)*gridSpace),80,0,-360));
         player.inventory.addItem(new Item(this.tileToItem(tileId),1));
         planet.getTilemap()[y][x] = ".";
+        mine.play();
       }
     }
   }
@@ -241,6 +251,8 @@ class Tilemap {
   tileMiningLevel (t) {
     switch (t) {
       case ".":
+        return 255;
+      case "s":
         return 255;
       case "m":
         return 0;
@@ -259,6 +271,8 @@ class Tilemap {
     switch (t) {
       case "m":
         return 64;
+      case ",":
+        return 65;
     }
   }
 }

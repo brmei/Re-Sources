@@ -1,6 +1,6 @@
 class Player {
   
-  constructor(spawn) {
+  constructor(spawn,inventory = new Backpack()) {
     this.pos = spawn;
     this.width = 0.8;
     this.height = 1.6;
@@ -12,15 +12,18 @@ class Player {
     
     this.onFloor = false;
     
-    this.inventory = new Backpack();
+    this.inventory = inventory;
     this.saturationCon = 50;
     this.health = 100;
-    this.oxygen = 30;
-    this.food = 10;
-    this.water = 50;
+    this.oxygen = 100;
+    this.food = 100;
+    this.water = 100;
     this.dieingRate = 0;
     
     this.mining = 0;
+    
+    
+    this.landed = true;
   }
   getPos(){
     return this.pos;
@@ -37,9 +40,24 @@ class Player {
     return [this.health,this.oxygen,this.water,this.food];
   }
   
+  getInventory(){
+    return this.inventory;
+  }
+  
+  lift(){
+    this.pos.y=this.pos.y-1;
+  }
+  
   show(){
-    fill(255,255,255);
-    rect(this.pos.x,this.pos.y,gridSpace*this.width,-gridSpace*this.height);
+    if(!shipLaunched) {
+      fill(255,255,255);
+      rect(this.pos.x,this.pos.y,gridSpace*this.width,-gridSpace*this.height);
+    } else {
+      fill(0,13,255);
+      rect(round(this.pos.x/gridSpace)*gridSpace,this.pos.y-gridSpace*2,gridSpace,2*gridSpace);
+      rect(round(this.pos.x/gridSpace)*gridSpace+gridSpace,this.pos.y-gridSpace,gridSpace,2*gridSpace);
+      rect(round(this.pos.x/gridSpace)*gridSpace-gridSpace,this.pos.y-gridSpace,gridSpace,2*gridSpace);
+    }
   }
   
   
@@ -49,7 +67,10 @@ class Player {
     this.vector.add(vel);
   }
   
-  move(tilemap) {
+  move(tilemap,shipLaunched) {
+    if(shipLaunched){
+      return;
+    }
     this.vector.x /= friction;
     
     if(this.isGravity(tilemap)){
@@ -60,6 +81,10 @@ class Player {
       }
     }else{
       if(this.vector.y>0){
+        if(this.landed==false){
+          systems.push(new particleSystem(createVector(this.pos.x+gridSpace*this.width/2,this.pos.y),40,0,-180));
+          this.landed = true;
+        }
         this.vector.y = 0;//Stop when ground hit
       }
     }
@@ -96,6 +121,15 @@ class Player {
     if(!this.isGravity(tilemap)&&this.vector.y>=0){//If no gravity
       this.pos.y = gridSpace*floor(this.pos.y/gridSpace);  
     }
+    
+    if(!this.isGravity(tilemap)&&abs(this.vector.x)>0.5&&systems.length<=1){//If running
+      if(this.vector.x<0){
+          systems.push(new particleSystem(createVector(this.pos.x+gridSpace*this.width/2,this.pos.y),20,-10,-80));
+      }else{
+          systems.push(new particleSystem(this.pos.copy(),20,190,80));
+      }
+    
+    }
   }
   
   isGravity(tilemap){
@@ -123,9 +157,10 @@ class Player {
   
   jump(inputMag,tilemap){
     if(this.inWater(tilemap)){
-      this.vector.sub(0,inputMag*0.05);
-    }else if(!this.isGravity(tilemap)){
-      this.vector.sub(0,inputMag);
+      this.vector.sub(0,gravMag*0.05);
+    }else if(!this.isGravity(tilemap)&&this.landed){
+      this.vector.sub(0,gravMag);
+      this.landed=false;
     }
   }
   
@@ -139,6 +174,17 @@ class Player {
   }
   
   update(planet){
+    //Oxygen, Water, Food
+    //this.water = 0;
+    //temporary decrease valyes
+    if (this.water-0.002>=0) {this.water -= 0.002;}
+    else {this.water=0}
+    if (this.oxygen-0.01>=0) {this.oxygen -= 0.01;}
+    else {this.oxygen=0}
+    if (this.food-0.001>=0) {this.food -= 0.001;}
+    else{this.food=0}
+    
+    //Dieing
     this.dieingRate = 0;
     if(this.oxygen<=20){
       this.dieingRate+=0.02*(20-this.oxygen);
@@ -157,6 +203,15 @@ class Player {
     this.health-=this.dieingRate;
     if(this.health>100){
       this.health=100;
+    }
+      if(this.oxygen>100){
+      this.oxygen=100;
+    }
+      if(this.water>100){
+      this.water=100;
+    }
+      if(this.food>100){
+      this.food=100;
     }
   
 

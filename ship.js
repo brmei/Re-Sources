@@ -110,11 +110,17 @@ class Item {
       case 2:
         return "Oxygen Tank";
       case 3:
-        return "SO"; //Spaghetti Oxide
+        return "Spaghetti Oxide";
       case 4:
         return "Steam"; 
+      case 5:
+        return "Aluminum Powder";
+      case 6:
+        return "Thermite";
       case 64:
-        return "Iron Oxide"
+        return "Iron Oxide";
+      case 65:
+        return "Moon Rock";
       default:
         return null;
     }
@@ -125,7 +131,7 @@ class Item {
 class Ship {
   constructor(x,y) {
     this.pos = createVector(x,y);
-    this.fuel;
+    this.fuel = 10;
     this.energy;
     
   }
@@ -133,6 +139,34 @@ class Ship {
   playerClose(player) {
     let difference = createVector(this.pos.x-player.pos.x,this.pos.y-player.pos.y);
     return difference.mag() < 3*gridSpace;
+  }
+  showFuel(){
+    fill(0);
+    rect(0,0,gameWidth/2,gameHeight);
+    fill(50,200,50);
+    textSize(sidebarRow/2);
+    text("Current Fuel:",sidebarRow/4,sidebarRow*1);
+    text(this.fuel,sidebarRow/4,sidebarRow*2);
+    
+    rect(0,sidebarRow*5/2,gameWidth/2,sidebarRow);
+    fill(0);
+    text("Launch",sidebarRow/4,sidebarRow*3.2);
+    
+    if(mouseX<gameWidth/2 && mouseY>sidebarRow*5/2 && mouseY<sidebarRow*5/2+sidebarRow && this.fuel>=10 && mouseIsPressed){
+      console.log("Blastoff");
+      this.fuel-=10;
+      shipLaunched=true;
+      fuelOn = false;
+      //blastoff 
+      for (let i=0;i<planet.getTilemap().length;i++) {
+        for (let j=0;j<planet.getTilemap()[i].length;j++) {
+          if (planet.getTilemap(0)[i][j] == "s") {
+            planet.getTilemap(0)[i][j] = ".";
+          }
+        }
+      }
+      setTimeout(function(){ newWorld(); }, 10000);
+    }
   }
 //   showCraftMenu() {
     
@@ -149,7 +183,7 @@ class Recipe {
     for(let i = 0; i < this.ingredients.length; i++){
       for(let e = 0; e < player.inventory.items.length; e++){
         if(player.inventory.items[e].id == this.ingredients[i].id && player.inventory.items[e].count >= this.quantity[i]){break}
-        if(e == player.inventory.items.length - 1){return false}
+        if(e == player.inventory.items.length - 1){console.log(this.ingredients[i]);return false}
       }
     }
     return true;
@@ -193,7 +227,7 @@ class CraftMenu {
     this.available[this.select].craft();
     this.update();
   }
-  show(){
+  showCraft(){
     fill(0);
     rect(0,0,gameWidth/2,gameHeight);
     fill(50,200,50);
@@ -213,4 +247,5 @@ class CraftMenu {
     }
     //console.log(this.items);
   }
+  
 }
