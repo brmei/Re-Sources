@@ -6,15 +6,17 @@ let friction = 2; //multiplier momentum is reduced by every frame
 let inputMag = 6; //how much momentum a player inputs
 let gameHeight = window.innerHeight*0.8; //size of canvas height
 let gameWidth = window.innerWidth*0.9; //size of canvas width
+//let gameHeight = 800 //size of canvas height
+//let gameWidth = 1700; //size of canvas width
 let sidebarWidth = gameWidth/2-gameHeight/2;
 let sidebarRow = gameHeight/10;
 let playerWidth = gridSpace;
 let playerHeight = gridSpace;
 let spawn;
-let cam1;
+//let cam1;
 let gravity = 0.5;
 let UIOn = false;
-
+let inRange = false;
 
 let player;
 let planet;
@@ -42,12 +44,15 @@ function setup() {
   spawn = createVector(25*gridSpace,8*gridSpace)
   player = new Player(spawn);
   planet = new Planet(50,0);
-  cam1 = new Cam(spawn);
-  player.inventory.addItem(new Item("Food"));
-  player.inventory.addItem(new Item("Water"));
-  player.inventory.addItem(new Item("Rocks"));
+  //cam1 = new Cam(spawn);
+  player.inventory.addItem(new Item(0,5));
+  player.inventory.addItem(new Item(1,1));
+  player.inventory.addItem(new Item(2,1));
   
 }
+
+//document.getElementsByTagName("canvas").addEventListener('contextmenu', event => event.preventDefault());//Disable right click
+
 
 function draw() {
   //console.log(frameRate());
@@ -55,11 +60,14 @@ function draw() {
   receiveInput();
    
   push();
-  cam1.active();
+  //cam1.active();
+  translate(-player.getPos().x+gameWidth/2,-player.getPos().y+gameHeight/2);
   player.update(planet);
   player.move(planet.getTilemap());
   planet.show();
   player.show();
+  ellipse(player.pos.x + playerWidth/2,player.pos.y - playerHeight/2,20);
+  
   pop();
   if(UIOn){
     player.inventory.show();
@@ -68,10 +76,10 @@ function draw() {
     player.inventory.selected()
   }
   showStats();
-  if(dist(mouseX,mouseY,player.pos.x ,player.pos.y) < gridSpace * 5){
-    console.log("Hi mom");
-  }
-  ellipse(player.pos.x,player.pos.y,20);
+  
+  text(round(frameRate()),gameWidth-100,gameHeight-50)
+  fill(255,0,0)
+  //rect(0,0,200,200)
 }
 
 const make2Darray = (cols,rows) => new Array(cols).fill().map(item =>(new Array(rows)))
@@ -115,23 +123,30 @@ function showStats(){
   rect((1-0.7)*sidebarWidth+(((1-(food/100))*sidebarWidth*0.7)),top+75, (food/100)*sidebarWidth*0.7, 15, 10);
   
   if(UIOn){
+    stroke(0)
+    strokeWeight(1)
     fill(0);
     textSize(30)
+    text(round(health) + "%",sidebarWidth-165,15)
     text("Health",sidebarWidth-90,15)
     fill(0);
     textSize(15)
+    text(round(oxygen) + "%",sidebarWidth-100,15+21)
     text("Oxygen",sidebarWidth-60,15+21)
     fill(0);
     textSize(15)
-    text("Water",sidebarWidth-50,15+20+22)
+    text(round(water) + "%",sidebarWidth-90,15+20+22)
+    text("Water",sidebarWidth-45,15+20+22)
     fill(0);
     textSize(15)
-    text("Food",sidebarWidth-30,15+20+22+21)
+    text(round(food) + "%",sidebarWidth-80,15+20+22+21)
+    text("Food",sidebarWidth-40,15+20+22+21)
     
   }
   pop();
 }
 
+//inputs
 function receiveInput(){
   if(keyIsDown(39)||keyIsDown(68)){
     //player.vector.add(inputMag);
@@ -147,7 +162,7 @@ function receiveInput(){
 }
 
 function keyPressed(){
-  if(keyIsDown(81)){
+  if(keyIsDown(69)){
     if(UIOn){
         player.inventory.switchItem();
       } else {
@@ -155,34 +170,24 @@ function keyPressed(){
       }
   } else if(keyIsDown(27)) {
     UIOn = false;
+  } else if(keyIsDown(32)){
+     player.inventory.useItem();
   } else if(keyIsDown(85)){
     
   }
 }
 
-function mouseClicked(){
-  let pos = createVector(mouseX,mouseY);
-  pos.sub(cam1.getPos());
-  pos.add((gameWidth-player.getWidth())/2,(gameHeight-player.getHeight())/2);
-  pos.x = floor(pos.x/gridSpace)-54;
-  pos.y = floor(pos.y/gridSpace)-24;
-  //console.log(pos)
-  
-  console.log("Hi mom");
-  planet.getTilemap()[pos.y][pos.x] = ".";
 
-  /*
-  for (var j=0;j<planet.getTilemap().length;j++){
-    for (var i=0;i<planet.getTilemap()[i].length;i++) {
-      if(collidePointRect(mouseX, mouseY,(j+i)*gridSpace,i*gridSpace,gridSpace,gridSpace)){
-        planet.getTilemap()[j][i] = ".";
-        console.log("Digging this");
-      }
-    }
-  }*/
+function mouseClicked(){
+  let pos = createVector(mouseX-(-player.getPos().x+gameWidth/2),mouseY-(-player.getPos().y+gameHeight/2));
+  pos.x = floor(pos.x/gridSpace)//-54;
+  pos.y = floor(pos.y/gridSpace)//-24;
+  if (planet.getRelativeTilemap(0).inTilemap(pos.x,pos.y)) {
+    planet.getRelativeTilemap(0).mine(pos.y,pos.x);
+  }
 }
 
-class Cam {
+/*class Cam {
   constructor(spawnpoint) {
     this.x = -spawnpoint.x;
     this.y = -spawnpoint.y;
@@ -207,7 +212,7 @@ class Cam {
   getPos(){
     return createVector(this.x,this.y)
   }
-}
+}*/
 
 
 
@@ -247,13 +252,13 @@ class Tilemap {
         }
       }
     }
-    this.array [10][14]= "s";
-    this.array [10][15]= "w";
-    this.array [9][15]= "w";
-    this.array [8][15]= "w";
-    this.array [10][16]= "w";
-    this.array [9][16]= "w";
-    this.array [8][16]= "w";
+    // this.array [10][14]= "s";
+    // this.array [10][15]= "w";
+    // this.array [9][15]= "w";
+    // this.array [8][15]= "w";
+    // this.array [10][16]= "w";
+    // this.array [9][16]= "w";
+    // this.array [8][16]= "w";
   }
   
   tempGen(){
@@ -292,7 +297,7 @@ class Tilemap {
         //temporary color
         switch (this.array[i][j+i]) {
           case ".":
-            fill(50,0,70);
+            fill(0,0,0,0)
             break;
           case ",":
             fill(100,100,100);
@@ -308,6 +313,7 @@ class Tilemap {
         }
         switch (s) {
           case 0:
+            //console.log((j+i)*gridSpace,i*gridSpace)
             rect((j+i)*gridSpace,i*gridSpace,gridSpace,gridSpace);
             break;
           case 1:
@@ -324,6 +330,16 @@ class Tilemap {
         }
       }
     }
+  }
+  mine (y,x) {
+    if(dist((player.pos.x-player.getWidth()/2)/gridSpace,-player.getHeight()/2+(player.pos.y)/gridSpace,x,y) <3){
+      console.log("Hi mom");
+      planet.getTilemap()[y][x] = ".";
+    }
+      
+  }
+  inTilemap(x,y){
+    return!(y<=0||x<=0||y>planet.size*gridSpace/2||x>planet.size*gridSpace)
   }
 }
 
@@ -391,7 +407,8 @@ class Planet {
   }
   
   show() {
-    background(50,0,70);
+    background(0)
+    //background(50,0,70);
     //looks at current side of planet and renders it
     this.getRelativeTilemap(0).show(0);
     this.getRelativeTilemap(1).show(1);
@@ -400,6 +417,7 @@ class Planet {
   }
    
 }
+
 
 //processing keyboard inputs
 // window.addEventListener("keydown",function (e) {
