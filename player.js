@@ -20,7 +20,7 @@ class Player {
     this.water = 50;
     this.dieingRate = 0;
     
-    
+    this.mining = 0;
   }
   getPos(){
     return this.pos;
@@ -109,7 +109,12 @@ class Player {
   }
   collide(tilemap,pos){
     if (!this.inTilemap(pos.x,pos.y)) return false;
-    return (tilemap[pos.y][pos.x]=="," || tilemap[pos.y][pos.x]=="tree");
+    switch (tilemap[pos.y][pos.x]) {
+      case ".":
+        return false;
+      default:
+        return true;
+    }
   }
   
   jump(inputMag,tilemap){
@@ -166,144 +171,5 @@ class Player {
       this.vector.add(20,-5);
       this.pos = createVector(this.pos.y,-this.pos.x+p.size*gridSpace);
     }
-  }
-  
-  
-}
-
-class Backpack {
-  constructor() {
-    this.items = [];
-    this.select = 0; //The position of the current item the player has selected
-  }
-  
-  addItem(i) {
-    append(this.items, i);
-  }
-  
-  switchItem(){
-    this.select++;
-    if(this.select == this.items.length){
-      this.select = 0;
-    }
-  }
-  
-  useItem(){
-     switch (this.items[this.select].id) {
-        case 0: //L. Spaghetti
-          player.food += 10;
-          break;
-        case 1: //Water Flask
-          player.water += 10;
-          break;
-        case 2: //Oxygen Tank
-          player.oxygen += 10;
-          break;
-        default:
-          return null;
-      }
-    this.items[this.select].count -= 1;
-   
-    if(this.items[this.select].count == 0){
-      this.items.splice(this.select, 1);
-     
-      if(this.select>0){this.select--}
-      
-    }
-  }
-  deleteItem(index){
-    this.items.splice(index, 1);
-    if(this.select>0){this.select--}
-  }
-  show(){
-    fill(0);
-    rect(0,0,sidebarWidth,gameHeight);
-    fill(50,200,50);
-    textSize(sidebarRow/2);
-    for(let i = 0; i < this.items.length; i++){
-      if(this.select == i){
-        rect(0, 0 + i*sidebarRow,sidebarWidth,sidebarRow);
-        fill(0);
-        text(this.items[i].count+" | "+this.items[i].name(),sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
-        text(this.items[i].count,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
-        fill(50,200,50);
-      }
-      else{
-       text(this.items[i].count+" | "+this.items[i].name(),sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
-      }
-    }
-    //console.log(this.items);
-  }
-  selected() {
-    if(this.items.length==0){return}
-    fill(50,200,50);
-    textSize(sidebarRow/2);
-    rect(0, 0,sidebarWidth,sidebarRow,10);
-    fill(0);
-    text(this.items[this.select].count+" | "+this.items[this.select].name(),sidebarRow/4,sidebarRow*3/4);
-    fill(50,200,50);
-  }
-}
-
-class Item {
-  constructor(id,count){
-    this.id = id;
-    this.count = count;
-  }
-  name() {
-    switch (this.id) {
-      case 0:
-        return "Liquified Spaghetti";
-      case 1:
-        return "Flask of Water";
-      case 2:
-        return "Oxygen Tank";
-      default:
-        return null;
-    }
-    return this.name;
-  }
-}
-
-class Ship {
-  constructor(x,y) {
-    this.pos = createVector(x,y);
-    this.fuel;
-    this.energy;
-    
-  }
-  
-  playerClose(player) {
-    if(this.pos.sub(player.pos).mag() < 3*gridSpace) return true;
-  }
-  showCraftMenu() {
-    
-  }
-}
-
-class Recipe {
-  constructor(item,ingredients = []){
-    this.item = item;
-    this.ingredients = ingredients;
-  }
-  canCraft(){
-    for(let i = 0; i < this.ingredients.length; i++){
-      for(let e = 0; e < player.inventory.items.length; e++){
-        if(player.inventory.items[e].id == this.ingredients[i].id){break}
-        if(e == player.inventory.items.length - 1){return false}
-      }
-    }
-    return true;
-  }
-  craft(){
-    for(let i = 0; i < this.ingredients.length; i++){
-      for(let e = 0; e = player.inventory.items; e++){
-        if(player.inventory.items[e] == this.ingredients[i]){
-          player.inventory.items.deleteItem[e];
-          break;
-        }
-      }
-    }
-    player.inventory.items.addItem(item);
   }
 }

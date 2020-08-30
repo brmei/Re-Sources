@@ -16,7 +16,8 @@ let playerHeight = gridSpace;
 let spawn;
 //let cam1;
 let gravity = 0.5;
-let UIOn = false;
+let UIOn = false; //Is the inventory open?
+let craftOn = false; //Is the crafting list open?
 let inRange = false;
 
 let player;
@@ -29,6 +30,7 @@ let oxy;
 let SO;
 
 //Recipes
+let shipCraft;
 let SO_r; //Spaghetti-Oxide
 //Movement
 
@@ -52,7 +54,7 @@ function setup() {
   spawn = createVector(25*gridSpace,0);
   spawn = createVector(25*gridSpace,8*gridSpace)
   player = new Player(spawn);
-  planet = new Planet(100,30);
+  planet = new Planet(50,30);
   //cam1 = new Cam(spawn);
   //items
   lSpag = new Item(0,5);
@@ -61,11 +63,13 @@ function setup() {
   SO = new Item(3,1);
   
   //recipes
-  SO_r = new Recipe(SO,[lSpag,water,oxy]);
   
-  player.inventory.addItem(lSpag);
-  player.inventory.addItem(water);
-  player.inventory.addItem(oxy);
+  SO_r = new Recipe(SO,[lSpag,water,oxy],[2,1,1]);
+  shipCraft = new CraftMenu([SO_r]);
+  
+  player.inventory.addItem(new Item(lSpag.id,lSpag.count));
+  player.inventory.addItem(new Item(water.id,water.count));
+  player.inventory.addItem(new Item(oxy.id,oxy.count));
   
 }
 
@@ -76,7 +80,7 @@ function draw() {
   //console.log(frameRate());
   //runs every tick
   receiveInput();
-   
+  
   push();
   //cam1.active();
   translate(-player.getPos().x+gameWidth/2,-player.getPos().y+gameHeight/2);
@@ -92,6 +96,9 @@ function draw() {
     //console.log("😂😂");
   } else {
     player.inventory.selected()
+  }
+  if(craftOn){
+    shipCraft.show();
   }
   showStats();
   
@@ -161,6 +168,7 @@ function showStats(){
     text("Food",sidebarWidth-40,15+20+22+21)
     
   }
+  
   pop();
 }
 
@@ -185,15 +193,22 @@ function keyPressed(){
         player.inventory.switchItem();
       } else {
         UIOn = true;
+        craftOn = false;
       }
   } else if(keyIsDown(27)) {
     UIOn = false;
+    craftOn = false;
   } else if(keyIsDown(32)){
      player.inventory.useItem();
   } else if(keyIsDown(49)){
     console.log(SO_r.canCraft());
-  } else if(keyIsDown(85)){
-    
+  } else if(keyIsDown(67)){
+    if(craftOn){
+      shipCraft.switchRecipe();
+    } else{
+      craftOn = true;
+      UIOn = false;
+    }
   }
 }
 
@@ -234,205 +249,53 @@ function mouseClicked(){
   }
 }*/
 
-
-
-
-
-class Tilemap {
-  
-  constructor(x,y,heightMap) {
-    this.array = make2Darray(y,x);
-    this.Gen(heightMap);
-    //this.tempGen();
-  }
-  
-  Gen(heightMap){
-    for (let i=0;i<this.array.length;i++){
-      for (let j=0;j<this.array[i].length;j++) {
-        this.array[i][j] = ".";
-      }
-    }
-    let start = (this.array[0].length-heightMap.length)/2;
-    for(let y=0;y<this.array.length;y++){
-      for(let x=0;x<heightMap.length;x++){
-        if(y<heightMap[x]){
-          this.array[this.array.length-y-1][x+start] = ",";
-        }
-      }
-    }
-    // this.array [10][14]= "s";
-    // this.array [10][15]= "w";
-    // this.array [9][15]= "w";
-    // this.array [8][15]= "w";
-    this.tree(16,9);
-  }
-  
-  tree(x,y){
-    let height = floor(random(2,6));
-    for(let i=0;i<height;i++){
-      this.array[y-i][x] = "tree";
-    }
-    this.array[y-height][x] = "leaf";
-    if(random(1)<0.3){
-      this.array[y-height-1][x+1] = "leaf";
-    }
-    if(random(1)<0.3){
-      this.array[y-height-1][x-1] = "leaf";
-    }
-    if(random(1)<0.3){
-      this.array[y-height+1][x+1] = "leaf";
-      if(height>3){
-        if(random(1)<0.5){
-          this.array[y-height-1][x+1] = "leaf";
-        }
-      }
-    }
-    if(random(1)<0.3){
-      this.array[y-height+1][x-1] = "leaf";
-      if(height>3){
-        if(random(1)<0.5){
-          this.array[y-height-1][x-1] = "leaf";
-        }
-      }
-    }
-    
-    
-    if(height>5){
-      if(random(1)<0.85){
-        this.array[y-2][x+1] = "leaf";
-      }
-    }
- 
-  }
-  
-  tempGen(){
-        //, blocks
-    //. air
-    //temporary pregenerated tilemap
-    for (var i=0;i<this.array.length;i++){
-      for (var j=0;j<this.array[i].length;j++) {
-        this.array[i][j] = ",";
-      }
-    }
-    for (var i=0;i<floor(this.array.length/2);i++){
-      for (var j=0;j<this.array[i].length;j++) {
-        this.array[i][j] = ".";
-      }
-    }
-        this.array[10][27] = ",";
-    this.array[11][27] = ",";
-        this.array[11][28] = ",";
-           this.array[8][24] = ",";
-    
-    this.array [11][15]= "s";
-    
-    // 
-  }
-  
-  getArray(){
-    return this.array;
-  }
-  
-  show(s){
-    
-    //for every tile create tile object
-    let renderDis = sqrt(pow(ceil(gameHeight/2),2) + pow(ceil(gameWidth/2),2));
-    let seenY = false;
-    let stopY = false;
-    for (var i=0;i<this.array.length;i++){
-      if(stopY==false) {
-        let seenX = false;
-        let stopX = false;
-        for (var j=0;j<this.array[i].length-2*i;j++) {
-          var tileTexture;
-          //temporary color
-          switch (this.array[i][j+i]) {
-            case ".": //void
-              fill(0,0,0,0)
-              break;
-            case ",": //moon soil lol
-              fill(100,100,100);
-              break;
-            case "s": //ship
-              fill(200,0,0);
-              break;
-            case "w": //water
-              fill(0,0,100);
-              break;
-            case "m": //iron oxide
-              fill(166,52,30);
-              break;
-            case "tree": //tree
-              fill(83, 49, 24);
-              break;
-            case "leaf":
-              fill(107,142,35);
-              break;
-            default:
-              break;
-          }
-          let newTile = createVector(0,0);
-          switch (s) {
-            case 0:
-              //console.log((j+i)*gridSpace,i*gridSpace)
-              newTile.set((j+i)*gridSpace,i*gridSpace);
-              break;
-            case 1:
-              newTile.set((planet.size-i)*gridSpace,(j+i)*gridSpace);
-              break;
-            case 2:
-              newTile.set((planet.size-j-i)*gridSpace,(planet.size-i)*gridSpace);
-              break;
-            case 3:
-              newTile.set(i*gridSpace,(planet.size-j-i)*gridSpace);
-              break;
-            default:
-              break;
-          }
-          if(stopX==false) {
-            if ((newTile.dist(player.pos)<renderDis)) {
-              seenX = true;
-              seenY = true;
-              rect(newTile.x,newTile.y,gridSpace,gridSpace);
-            } else {
-              if(seenX){
-                stopX = true;
-              }
-            }
-          }
-          //rect(newTile.x,newTile.y,gridSpace,gridSpace);
-        }
-      } else if (seenY) {
-        stopY = true;
-      }
-    }
-  }
-  
-  
-  mine (y,x) {
-    if(dist((player.pos.x-player.getWidth()/2)/gridSpace,-player.getHeight()/2+(player.pos.y)/gridSpace,x,y) <3){
-      //console.log("Hi mom");
-      planet.getTilemap()[y][x] = ".";
-    }
-      
-  }
-  inTilemap(x,y){
-    return!(y<=0||x<=0||y>planet.size*gridSpace/2||x>planet.size*gridSpace)
-  }
-}
-
 class Planet {
 
   constructor(size,intensity) {
-    this.type = createVector(randomGaussian(255/2,intensity),randomGaussian(255/2,intensity));
-    //console.log(this.type)
+    this.type = createVector(randomGaussian(255/2,intensity),abs(randomGaussian(511/2,intensity)-256));
+    console.log(this.type);
+    this.base = this.parseType(this.type);
+    console.log(this.base);
     this.side = 0;
     this.size = size;
     this.atmosphere = 8;
-    this.sideN = new Tilemap(size,floor(size/2),this.generateLandscape());
-    this.sideE = new Tilemap(size,floor(size/2),this.generateLandscape());
-    this.sideS = new Tilemap(size,floor(size/2),this.generateLandscape());
-    this.sideW = new Tilemap(size,floor(size/2),this.generateLandscape());
+    this.sideN = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base);
+    this.sideE = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base);
+    this.sideS = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base);
+    this.sideW = new Tilemap(size,floor(size/2),this.generateLandscape(),this.type,this.base);
+  }
+  
+  parseType(t) {
+    if (this.type.x < 85) {
+      if (this.type.y < 85) {
+        
+      } else if (this.type.y <170) {
+
+      } else {
+
+      }
+    } else if (this.type.x <170) {
+      if (this.type.y < 85) {
+        return "m"; //mars-like planet
+      } else if (this.type.y <170) {
+
+      } else {
+
+      }
+    } else {
+      if (this.type.y < 85) {
+      
+      } else if (this.type.y <170) {
+
+      } else {
+
+      }
+    }
+    return ",";
+  }
+  
+  getPlanetDifficulty(t) {
+    return abs(t.x-127)+t.y;
   }
   
   getRelativeTilemap(n) {
@@ -466,19 +329,30 @@ class Planet {
     let minHeight = maxHeight*0.7;
     //console.log(length)
     let heights = [];
-    let r = random(10);
+    //let r = random(10);
     for(let i=0;i<length;i++){
-      let b = this.calculateCircularHeight(i,sqrt((pow(length/2),2)*2));
+      let temp = (this.size-2*this.atmosphere)/2;
+      let r = sqrt(pow(temp,2)+pow(temp,2));
+      let b = this.calculateCircularHeight(i,sqrt((pow(length/2),2)*2),length);
       //console.log("add " + b + "from " + i + " and " + length);
       let angle = i*2*PI/length;
-      let height = minHeight+(maxHeight-minHeight)*noise(r*cos(angle),r*sin(angle)+b);
+      console.log(b)
+      let height = floor(b);
+      //let height = minHeight+(maxHeight-minHeight)*noise(r*cos(angle),r*sin(angle)+b);
       heights.push(height);
     }
     //console.log(heights)
     return heights;
   }
   
-  calculateCircularHeight (x,r) {
+  calculateCircularHeight (x,r,length) {
+    //console.log(( (pow(r,2))+(2*sqrt(2)*x*r)-(2*pow(x,2)) )/2)
+    console.log(x)
+    if(x<length/2){
+      return x;      
+    }else{
+      return length-x;  
+    }  
     return sqrt(( (pow(r,2))+(2*sqrt(2)*x*r)-(2*pow(x,2)) )/2) - sqrt(2)*r/2;
   }
   
@@ -487,7 +361,7 @@ class Planet {
   }
   
   show() {
-    background(0)
+    background(168,189,186);
     //background(50,0,70);
     //looks at current side of planet and renders it
     this.getRelativeTilemap(0).show(0);
@@ -495,7 +369,6 @@ class Planet {
     this.getRelativeTilemap(2).show(2);
     this.getRelativeTilemap(3).show(3);
   }
-   
 }
 
 
