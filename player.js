@@ -22,7 +22,10 @@ class Player {
     
     
   }
-    
+  getPos(){
+    return this.pos;
+  }  
+  
   getWidth(){
     return this.width;
   }
@@ -35,7 +38,6 @@ class Player {
   }
   
   show(){
-    cam1.snap(-this.pos.x,-this.pos.y)
     fill(255,255,255);
     rect(this.pos.x,this.pos.y,gridSpace*this.width,-gridSpace*this.height);
   }
@@ -188,6 +190,13 @@ class Backpack {
   
   useItem(){
     
+    this.items[this.select].count -= 1;
+    if(this.items[this.select].count == 0){
+      this.items.splice(this.select, 1);
+     
+      if(this.select>0){this.select--}
+      
+    }
   }
   
   show(){
@@ -199,12 +208,12 @@ class Backpack {
       if(this.select == i){
         rect(0, 0 + i*sidebarRow,sidebarWidth,sidebarRow);
         fill(0);
-        text(this.items[i].count+" | "+this.items[i].name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
+        text(this.items[i].count+" | "+this.items[i].name(),sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
         text(this.items[i].count,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
         fill(50,200,50);
       }
       else{
-       text(this.items[i].count+" | "+this.items[i].name,sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
+       text(this.items[i].count+" | "+this.items[i].name(),sidebarRow/4,sidebarRow*3/4 + i*sidebarRow);
       }
     }
     //console.log(this.items);
@@ -214,18 +223,27 @@ class Backpack {
     textSize(sidebarRow/2);
     rect(0, 0,sidebarWidth,sidebarRow,10);
     fill(0);
-    text(this.items[this.select].count+" | "+this.items[this.select].name,sidebarRow/4,sidebarRow*3/4);
+    text(this.items[this.select].count+" | "+this.items[this.select].name(),sidebarRow/4,sidebarRow*3/4);
     fill(50,200,50);
   }
 }
 
 class Item {
-  constructor(name){
-    this.name = name;
-    this.count = 1;
-    
+  constructor(id,count){
+    this.id = id;
+    this.count = count;
   }
-  name(){
+  name() {
+    switch (this.id) {
+      case 0:
+        return "Liquified Spaghetti";
+      case 1:
+        return "Flask of Water";
+      case 2:
+        return "Oxygen Tank";
+      default:
+        return null;
+    }
     return this.name;
   }
 }
