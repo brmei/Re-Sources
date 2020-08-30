@@ -4,6 +4,7 @@ translate, p5, createVector*/
 let gridSpace = 32; //number of pixels per unit
 let friction = 2; //multiplier momentum is reduced by every frame
 let inputMag = 6; //how much momentum a player inputs
+let gravMag = 12;
 let gameHeight = window.innerHeight*0.8; //size of canvas height
 let gameWidth = window.innerWidth*0.9; //size of canvas width
 //let gameHeight = 800 //size of canvas height
@@ -14,11 +15,14 @@ let sidebarRow = gameHeight/10;
 let playerWidth = gridSpace;
 let playerHeight = gridSpace;
 let spawn;
+let newPlanetSize;
 //let cam1;
 let gravity = 0.5;
 let UIOn = false; //Is the inventory open?
 let craftOn = false; //Is the crafting list open?
+let fuelOn = false; //Is the fuel meter being displayed?
 let inRange = false;
+let shipLaunched = false;
 
 let player;
 let ship;
@@ -30,15 +34,20 @@ let water;
 let oxy;
 let SO;
 let steam;
+let ap;
+let io;
+let thermite;
 
 //Recipes
 let shipCraft;
 let SO_r; //Spaghetti-Oxide
 let steam_r;
+let thermite_r;
 //Movement
 
 
 //Music
+let songID;
 let juke;
 let beep;
 let boop;
@@ -46,7 +55,11 @@ let space1;
 let space2;
 let heat;
 let current;
+let mine;
 
+//Particles
+let systems = [];
+let flames = [];
 
 function preload() {
   soundFormats("mp3");
@@ -55,6 +68,7 @@ function preload() {
   space1 = loadSound("https://cdn.glitch.com/16c26bfa-0e05-488d-8525-9a6fbe0379a6%2FSpace_1.mp3?v=1598642738842");
   space2 = loadSound("https://cdn.glitch.com/d1474153-2476-47c8-9888-60d3a5c02c62%2FSpace_2.mp3?v=1598781729912");
   heat = loadSound("https://cdn.glitch.com/d1474153-2476-47c8-9888-60d3a5c02c62%2FHeat.mp3?v=1598781734126");
+  mine = loadSound("https://cdn.glitch.com/b8ff3d5a-385e-4dfe-8c37-d7a4d05dfb6c%2FMining-%5BAudioTrimmer.com%5D.mp3?v=1598793123461");
 }
 
 
@@ -64,10 +78,7 @@ function setup() {
   rectMode(CORNER);
   strokeWeight(0);
   fill(200);
-  spawn = createVector(25*gridSpace,0);
-  spawn = createVector(25*gridSpace,1*gridSpace)
-  player = new Player(spawn);
-  planet = new Planet(40,30);
+  newWorld();
   //cam1 = new Cam(spawn);
   //items
   lSpag = new Item(0,5);
@@ -75,20 +86,26 @@ function setup() {
   oxy = new Item(2,1);
   SO = new Item(3,1);
   steam = new Item(4,4);
+  ap = new Item(5,2);
+  io = new Item(64,1);
+  thermite = new Item(6,1);
   
   //recipes
   
   SO_r = new Recipe(SO,[lSpag,water,oxy],[2,1,1]);
   steam_r = new Recipe(steam,[water,oxy],[1,1]);
-  shipCraft = new CraftMenu([SO_r,steam_r]);
+  thermite_r = new Recipe(thermite,[ap,io],[2,1]);
+  shipCraft = new CraftMenu([thermite_r,SO_r,steam_r]);
   
   player.inventory.addItem(new Item(lSpag.id,lSpag.count));
   player.inventory.addItem(new Item(water.id,water.count));
   player.inventory.addItem(new Item(oxy.id,oxy.count));
+  player.inventory.addItem(new Item(ap.id,ap.count));
   
   
   
   juke = new Jukebox();
+  songID = 0;
 }
 
 //document.getElementsByTagName("canvas").addEventListener('contextmenu', event => event.preventDefault());//Disable right click
@@ -103,7 +120,7 @@ function draw() {
   //cam1.active();
   translate(-player.getPos().x+gameWidth/2,-player.getPos().y+gameHeight/2);
   player.update(planet);
-  player.move(planet.getTilemap());
+  player.move(planet.getTilemap(),shipLaunched);
   planet.show();
   player.show();
   ellipse(player.pos.x + playerWidth/2,player.pos.y - playerHeight/2,20);
@@ -116,13 +133,53 @@ function draw() {
     player.inventory.selected()
   }
   if(craftOn){
-    shipCraft.show();
+    shipCraft.showCraft();
+  } else if(fuelOn){
+    ship.showFuel();
   }
   showStats();
   
   text(round(frameRate()),gameWidth-100,gameHeight-50)
   fill(255,0,0)
   //rect(0,0,200,200)
+  runParticles()
+  if(shipLaunched){
+    player.lift();
+  }
+}
+
+function newWorld() {
+  newPlanetSize = abs(floor(randomGaussian(50,15)));
+  spawn = createVector(newPlanetSize/2*gridSpace,0);
+  if(player==undefined){
+      player = new Player(spawn);
+  }else{
+      player = new Player(spawn,player.getInventory());
+  }
+  planet = new Planet(newPlanetSize,30);
+  shipLaunched = false;
+}
+
+function runParticles(){
+    for(let i=systems.length-1;i>=0;i--){
+     let current = systems[i];
+     current.run();
+     if(current.finished()){
+       systems.splice(i,1); 
+    }
+  }
+  
+  for(let i=flames.length-1; i>= 0; i--){
+    let current = flames[i]
+    current.update();
+    if(current.getR() <= 0 ){
+      flames.splice(i, 1);
+    }
+  }
+  if(shipLaunched){
+    flames.push(new flame(-gridSpace+(gridSpace*player.getWidth()/2)+gridSpace*round(gameWidth/2/gridSpace),gridSpace+gameHeight/2,random(7,15)))
+    flames.push(new flame(gridSpace+(gridSpace*player.getWidth()/2)+gridSpace*round(gameWidth/2/gridSpace),gridSpace+gameHeight/2,random(7,15)))
+  }
 }
 
 const make2Darray = (cols,rows) => new Array(cols).fill().map(item =>(new Array(rows)))
@@ -184,29 +241,35 @@ function showStats(){
     textSize(15)
     text(round(food) + "%",sidebarWidth-80,15+20+22+21)
     text("Food",sidebarWidth-40,15+20+22+21)
-    
+    pop();
+    textSize(20);
+    text("Use [esc] to exit inventory",10,gameHeight - 10);
+  } else {
+    pop();
+    textSize(20);
+    text("Use [e] to access inventory",10,gameHeight - 10);
   }
-  
-  pop();
 }
 
 //inputs
 function receiveInput(){
-  if(keyIsDown(39)||keyIsDown(68)){
-    //player.vector.add(inputMag);
-    player.addForce(createVector(inputMag,0))
-  }
-  if(keyIsDown(37)||keyIsDown(65)){
-    //player.vector.sub(inputMag);
-    player.addForce(createVector(-inputMag,0))
-  }
-  if(keyIsDown(38)||keyIsDown(87)){
-    player.jump(7,planet.getTilemap());
+  if(!shipLaunched){
+    if(keyIsDown(39)||keyIsDown(68)){
+      //player.vector.add(inputMag);
+      player.addForce(createVector(inputMag,0))
+    }
+    if(keyIsDown(37)||keyIsDown(65)){
+      //player.vector.sub(inputMag);
+      player.addForce(createVector(-inputMag,0))
+    }
+    if(keyIsDown(38)||keyIsDown(87)){
+      player.jump(7,planet.getTilemap());
+    }
   }
 }
 
 function keyPressed(){
-  
+  juke.initialize(songID);
   if(keyIsDown(69)){
     if(UIOn){
         player.inventory.switchItem();
@@ -218,6 +281,7 @@ function keyPressed(){
   } else if(keyIsDown(27)) {
     UIOn = false;
     craftOn = false;
+    fuelOn = false;
     boop.play();
   } else if(keyIsDown(32)){
      player.inventory.useItem();
@@ -229,51 +293,27 @@ function keyPressed(){
         shipCraft.switchRecipe();
       } else{
         beep.play();
+        shipCraft.update();
         craftOn = true;
         UIOn = false;
       }
     }
   } else if(craftOn && keyIsDown(13)){
       shipCraft.craftSelected();
+  } else if(keyIsDown(70)){
+    fuelOn = true;
   }
 }
 
 
 function mouseClicked(){
   let pos = createVector(mouseX-(-player.getPos().x+gameWidth/2),mouseY-(-player.getPos().y+gameHeight/2));
-  pos.x = floor(pos.x/gridSpace)//-54;
-  pos.y = floor(pos.y/gridSpace)//-24;
+  pos.x = floor(pos.x/gridSpace)
+  pos.y = floor(pos.y/gridSpace)
   if (planet.getRelativeTilemap(0).inTilemap(pos.x,pos.y)) {
-    planet.getRelativeTilemap(0).mine(pos.y,pos.x);
+    planet.getRelativeTilemap(0).mine(pos.y,pos.x,mouseX,mouseY);
   }
 }
-
-/*class Cam {
-  constructor(spawnpoint) {
-    this.x = -spawnpoint.x;
-    this.y = -spawnpoint.y;
-  }
-  active() {
-    translate(this.x + (gameWidth - player.getWidth()) / 2,this.y + (gameHeight - player.getHeight()) / 2);
-  }
-  snapY(y) {
-    this.y = y;
-  }
-  snapX(x) {
-    this.x = x;
-  }
-  snap(x, y){
-    this.x = x;
-    this.y = y;
-  }
-  shift(x, y){
-    this.x += x;
-    this.y += y;
-  }
-  getPos(){
-    return createVector(this.x,this.y)
-  }
-}*/
 
 class Planet {
 
@@ -294,28 +334,33 @@ class Planet {
   
   parseType(t) {
     if (this.type.x < 85) {
+      songID = 2;
       if (this.type.y < 85) {
-        
+        return "d";
       } else if (this.type.y <170) {
-
+        return "b";
       } else {
 
       }
     } else if (this.type.x <170) {
       if (this.type.y < 85) {
+        songID = 0;
         return "m"; //mars-like planet
       } else if (this.type.y <170) {
-
+        songID = 0;
+        return ","; //moon-like planetoid
       } else {
-
+        songID = 1;
+        return "w";
       }
     } else {
       if (this.type.y < 85) {
-      
+        songID = 0;
+        return "i";
       } else if (this.type.y <170) {
-
+        songID = 1;
       } else {
-
+        songID = 1;
       }
     }
     return ",";
@@ -384,8 +429,8 @@ class Planet {
   }
   
   show() {
-    background(168,189,186);
-    //background(50,0,70);
+    //background(168,189,186);
+    background(50,0,70);
     //looks at current side of planet and renders it
     this.getRelativeTilemap(0).show(0);
     this.getRelativeTilemap(1).show(1);
@@ -445,4 +490,123 @@ class Fire {
       
     }
   }
+}
+
+class flame{
+  constructor(x, y, r) {
+    this.x = x;
+    this.y = y;
+    this.r = r;
+    
+    this.c = color(255);
+    let ran = random(3);
+    if(ran < 1){
+      this.c = color(255,100,20,250);
+    } else if(ran >= 1 && r < 2 ){
+      this.c = color(255, 200, 10, 250);
+    } else if(ran >= 2 ){
+      this.c = color(255, 80, 5, 250); 
+    }
+    
+  }
+  getR(){
+    return this.r;
+  }
+  
+  update(){
+    this.move();
+    this.shrink();
+    this.show();
+  }
+  
+  show() {
+    noStroke();
+    stroke(this.c)
+    fill(this.c);
+    ellipse(this.x, this.y, this.r);
+  }
+
+  move() {
+    this.x += random(-4, 4);
+    this.y += random(1, 4);
+  }
+  
+  shrink(){    
+   this.r-=0.2;
+  }
+  
+  
+
+}
+
+class particleSystem{
+  constructor(pos,n,startA,angle){
+    this.pos = pos;
+    this.particles=this.makeParticles(n,startA,angle);
+  }
+  
+  makeParticles(n,startA,angle){
+     let p = [];
+    for(let i=0;i<n;i++){
+     p.push(new particle(createVector(this.pos.x+random(-0.2,0.2),this.pos.y+random(-0.2,0.2)),startA,angle));                         
+    }
+    return p;
+  }
+    
+  run(){
+     for(let i=this.particles.length-1;i>=0;i--){
+       let current = this.particles[i];
+       current.update();
+       if(current.isDead()){
+         this.particles.splice(i,1); 
+       }
+     }
+  }
+  
+  finished(){
+    return this.particles.length==0; 
+  }
+    
+  
+}
+
+class particle{
+   constructor(pos,startA,angle){
+     console.log(startA)
+     this.startLife = 15;
+     this.life = this.startLife;
+     this.acc = createVector(0,0.05);
+     this.vel = p5.Vector.fromAngle(radians(startA+random(angle)),1);
+     this.pos = pos;
+     this.rot = radians(random(360));
+   }
+  
+  isDead(){
+    return this.life<0;
+  }
+  
+  update(){
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.life--;
+    this.show()
+  }
+  
+  show(){
+    let min = 70;
+    let diff = 255-min;
+    stroke(50,min+(diff*this.life/this.startLife));
+    fill(50,min+(diff*this.life/this.startLife));
+    push();
+    rectMode(CENTER)
+    translate(-player.getPos().x+gameWidth/2,-player.getPos().y+gameHeight/2);
+    translate(this.pos.x,this.pos.y);
+    rotate(this.rot);
+    rect(0,0,4,4);
+    pop();
+
+    
+
+  }
+  
 }

@@ -1,4 +1,3 @@
 add ores
-add mining drops
 new planets
 rocket system
