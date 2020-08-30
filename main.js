@@ -13,7 +13,7 @@ let sidebarRow = gameHeight/10;
 let playerWidth = gridSpace;
 let playerHeight = gridSpace;
 let spawn;
-//let cam1;
+let cam1;
 let gravity = 0.5;
 let UIOn = false;
 let inRange = false;
@@ -44,7 +44,7 @@ function setup() {
   spawn = createVector(25*gridSpace,8*gridSpace)
   player = new Player(spawn);
   planet = new Planet(50,0);
-  //cam1 = new Cam(spawn);
+  cam1 = new Cam(spawn);
   player.inventory.addItem(new Item(0,5));
   player.inventory.addItem(new Item(1,1));
   player.inventory.addItem(new Item(2,1));
@@ -67,6 +67,7 @@ function draw() {
   planet.show();
   player.show();
   ellipse(player.pos.x + playerWidth/2,player.pos.y - playerHeight/2,20);
+  //inRange = dist(mouseX,mouseY,player.pos.x + playerWidth/2 - cam1.x,player.pos.y - playerHeight/2 - cam1.y) < gridSpace * 3;
   
   pop();
   if(UIOn){
@@ -179,15 +180,33 @@ function keyPressed(){
 
 
 function mouseClicked(){
-  let pos = createVector(mouseX-(-player.getPos().x+gameWidth/2),mouseY-(-player.getPos().y+gameHeight/2));
+  //translate(this.x + (gameWidth - player.getWidth()) / 2,this.y + (gameHeight - player.getHeight()) / 2);
+  let pos = createVector(mouseX+(-player.getPos().x+gameWidth/2),mouseY+(-player.getPos().y+gameHeight/2));
+  //console.log(mouseX,mouseY)
+  //console.log(player.getPos())
+  //pos = createVector(pos.x+player.getPos().x -gameWidth/2 + (gameWidth-player.getWidth())/2,pos.y+player.getPos().y + (gameHeight-player.getHeight())/2);
   pos.x = floor(pos.x/gridSpace)//-54;
   pos.y = floor(pos.y/gridSpace)//-24;
-  if (planet.getRelativeTilemap(0).inTilemap(pos.x,pos.y)) {
+  //console.log(pos)
+  
+  
+  if (!planet.getRelativeTilemap(0).inTilemap(pos.x,pos.y)) {
     planet.getRelativeTilemap(0).mine(pos.y,pos.x);
   }
+    //planet.getTilemap()[pos.y][pos.x] = ".";
+  
+  /*
+  for (var j=0;j<planet.getTilemap().length;j++){
+    for (var i=0;i<planet.getTilemap()[i].length;i++) {
+      if(collidePointRect(mouseX, mouseY,(j+i)*gridSpace,i*gridSpace,gridSpace,gridSpace)){
+        planet.getTilemap()[j][i] = ".";
+        console.log("Digging this");
+      }
+    }
+  }*/
 }
 
-/*class Cam {
+class Cam {
   constructor(spawnpoint) {
     this.x = -spawnpoint.x;
     this.y = -spawnpoint.y;
@@ -212,7 +231,7 @@ function mouseClicked(){
   getPos(){
     return createVector(this.x,this.y)
   }
-}*/
+}
 
 
 
@@ -308,6 +327,9 @@ class Tilemap {
           case "w":
             fill(0,0,100);
             break;
+          case "m":
+            fill(0,200,0);
+            break;
           default:
             break;
         }
@@ -332,7 +354,13 @@ class Tilemap {
     }
   }
   mine (y,x) {
-    if(dist((player.pos.x-player.getWidth()/2)/gridSpace,-player.getHeight()/2+(player.pos.y)/gridSpace,x,y) <3){
+  //console.log(player.pos)
+
+    console.log(dist((player.getWidth()/2)+(player.pos.x)/gridSpace,-player.getHeight()+(player.pos.y)/gridSpace,x,y));
+    console.log(player.getHeight())
+    fill(0);
+    ellipse(player.pos.x/gridSpace,player.pos.y/gridSpace,20);
+    if(dist((player.pos.x)/gridSpace,-player.getHeight()+(player.pos.y)/gridSpace,x,y) >0){
       console.log("Hi mom");
       planet.getTilemap()[y][x] = ".";
     }

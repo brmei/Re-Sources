@@ -38,6 +38,7 @@ class Player {
   }
   
   show(){
+    cam1.snap(-this.pos.x,-this.pos.y)
     fill(255,255,255);
     rect(this.pos.x,this.pos.y,gridSpace*this.width,-gridSpace*this.height);
   }
@@ -189,8 +190,21 @@ class Backpack {
   }
   
   useItem(){
-    
+     switch (this.items[this.select].id) {
+        case 0: //L. Spaghetti
+          player.food += 10;
+          break;
+        case 1: //Water Flask
+          player.water += 10;
+          break;
+        case 2: //Oxygen Tank
+          player.oxygen += 10;
+          break;
+        default:
+          null;
+      }
     this.items[this.select].count -= 1;
+   
     if(this.items[this.select].count == 0){
       this.items.splice(this.select, 1);
      
@@ -219,6 +233,7 @@ class Backpack {
     //console.log(this.items);
   }
   selected() {
+    if(this.items.length==0){return}
     fill(50,200,50);
     textSize(sidebarRow/2);
     rect(0, 0,sidebarWidth,sidebarRow,10);
